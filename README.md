@@ -137,6 +137,8 @@ TODO, but see https://guide.allennlp.org/using-config-files/
 
 ### Coding New Models
 
+TODO, but for now see [baseline_model](placeholder_name/baseline_model.py)
+
 
 # AllenNLP Template Project using Config Files
 
