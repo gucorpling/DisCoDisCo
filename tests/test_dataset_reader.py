@@ -7,9 +7,7 @@ class TestDisrpt2021TsvReader:
         data_path = "tests/fixtures/toy_data.rels"
         instances = list(reader.read(data_path))
 
-        assert len(instances) == 2
-        print(instances[0])
-        print(instances[1])
+        assert len(instances) == 10
 
         fields = instances[0].fields
         expected_tokens = ["In", "the", "present", "study", ","]
