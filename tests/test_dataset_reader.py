@@ -1,7 +1,7 @@
 from gucorpling_models.dataset_reader import Disrpt2021Reader
 
 
-class TestTextClassificationJsonReader:
+class TestDisrpt2021TsvReader:
     def test_read_from_eng_rst_gum_sample(self):
         reader = Disrpt2021Reader()
         data_path = "tests/fixtures/toy_data.rels"
