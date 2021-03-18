@@ -29,7 +29,11 @@ local embedding_dim = 768;
                 }
             }
         },
-        "encoder": {
+        "encoder1": {
+            "type": "boe",
+            "embedding_dim": embedding_dim,
+        },
+        "encoder2": {
             "type": "boe",
             "embedding_dim": embedding_dim,
         }

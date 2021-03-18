@@ -24,7 +24,11 @@
                 }
             }
         },
-        "encoder": {
+        "encoder1": {
+            "type": "boe",
+            "embedding_dim": 768
+        },
+        "encoder2": {
             "type": "boe",
             "embedding_dim": 768
         }

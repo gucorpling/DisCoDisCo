@@ -28,7 +28,12 @@ local transformer_model_name = 'bert-base-cased';
                 }
             }
         },
-        "encoder": {
+        "encoder1": {
+            "type": "bert_pooler",
+            "pretrained_model": transformer_model_name,
+            "dropout": 0.3
+        },
+        "encoder2": {
             "type": "bert_pooler",
             "pretrained_model": transformer_model_name,
             "dropout": 0.3

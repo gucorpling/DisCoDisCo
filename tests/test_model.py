@@ -1,7 +1,7 @@
 from allennlp.common.testing import ModelTestCase
 
 
-class TestSimpleClassifier(ModelTestCase):
+class TestBaseline(ModelTestCase):
     def test_model_can_train(self):
         # This built-in test makes sure that your data can load, that it gets passed to the model
         # correctly, that your model computes a loss in a way that we can get gradients from it,

@@ -41,7 +41,7 @@ jobs:
     - name: Black
       if: always()
       run: |
-        black . --check --exclude sharedtask2021
+        black . -l 120 --check --exclude sharedtask2021
 
     - name: Flake8
       if: always()
