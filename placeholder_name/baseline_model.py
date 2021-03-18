@@ -32,8 +32,8 @@ class Disrpt2021Baseline(Model):
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(0.4)
 
-        self.direction_feedforward = torch.nn.Linear(encoder.get_output_dim() * 4, num_directions)
-        self.relation_feedforward = torch.nn.Linear(encoder.get_output_dim() * 4, num_relations)
+        self.direction_decoder = torch.nn.Linear(encoder.get_output_dim() * 4, num_directions)
+        self.relation_decoder = torch.nn.Linear(encoder.get_output_dim() * 4, num_relations)
 
         self.relation_accuracy = CategoricalAccuracy()
         self.direction_accuracy = CategoricalAccuracy()
@@ -64,8 +64,8 @@ class Disrpt2021Baseline(Model):
         combined = torch.cat((encoded_unit1_body, encoded_unit1_sentence, encoded_unit2_body, encoded_unit2_sentence), 1)
         combined = self.dropout(combined)
 
-        direction_logits = self.direction_feedforward(combined)
-        relation_logits = self.relation_feedforward(combined)
+        direction_logits = self.direction_decoder(combined)
+        relation_logits = self.relation_decoder(combined)
 
         # direction_probs = F.softmax(relation_logits, dim=-1)
         # relation_probs = F.softmax(relation_logits, dim=-1)
