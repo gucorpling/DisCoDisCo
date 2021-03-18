@@ -40,8 +40,12 @@ class Disrpt2021Baseline(Model):
         self.relation_decoder = torch.nn.Linear(linear_input_size, num_relations)
 
         # these are stateful objects that keep track of accuracy across an epoch
-        self.relation_accuracy = CategoricalAccuracy()
         self.direction_accuracy = CategoricalAccuracy()
+        self.relation_accuracy = CategoricalAccuracy()
+
+        # convenience functions for turning indices into labels
+        self.direction_label = lambda i: self.vocab.get_token_from_index(int(i), "direction_labels")
+        self.relation_label = lambda i: self.vocab.get_token_from_index(int(i), "relation_labels")
 
     def forward(  # type: ignore
         self,
@@ -74,7 +78,7 @@ class Disrpt2021Baseline(Model):
                 encoded_unit2_sentence,
             ),
             1,
-        ).to(get_device_of(encoded_unit1_body))
+        )
         combined = self.dropout(combined)
 
         direction_logits = self.direction_decoder(combined)
@@ -97,31 +101,20 @@ class Disrpt2021Baseline(Model):
 
     def make_output_human_readable(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
         if "gold_direction" in output_dict:
-            output_dict["gold_direction"] = [
-                self.vocab.get_token_from_index(int(i), "direction_labels") for i in output_dict["gold_direction"]
-            ]
+            output_dict["gold_direction"] = [self.direction_label(i) for i in output_dict["gold_direction"]]
         if "gold_relation" in output_dict:
-            output_dict["gold_relation"] = [
-                self.vocab.get_token_from_index(int(i), "relation_labels") for i in output_dict["gold_relation"]
-            ]
+            output_dict["gold_relation"] = [self.relation_label(i) for i in output_dict["gold_relation"]]
 
         direction_index = output_dict["direction_logits"].argmax(-1)
-        output_dict["pred_direction"] = [
-            self.vocab.get_token_from_index(int(i), "direction_labels") for i in direction_index
-        ]
+        output_dict["pred_direction"] = [self.direction_label(i) for i in direction_index]
         relation_index = output_dict["relation_logits"].argmax(-1)
-        output_dict["pred_relation"] = [
-            self.vocab.get_token_from_index(int(i), "relation_labels") for i in relation_index
-        ]
+        output_dict["pred_relation"] = [self.relation_label(i) for i in relation_index]
 
         output_dict["direction_probs"] = list()
         for direction_logits_row in output_dict["direction_logits"]:
             direction_probs = F.softmax(direction_logits_row)
             output_dict["direction_probs"].append(
-                {
-                    self.vocab.get_token_from_index(int(i), "direction_labels"): direction_probs[i]
-                    for i in range(len(direction_probs))
-                }
+                {self.direction_label(i): direction_probs[i] for i in range(len(direction_probs))}
             )
         del output_dict["direction_logits"]
 
@@ -129,10 +122,7 @@ class Disrpt2021Baseline(Model):
         for relation_logits_row in output_dict["relation_logits"]:
             relation_probs = F.softmax(relation_logits_row)
             output_dict["relation_probs"].append(
-                {
-                    self.vocab.get_token_from_index(int(i), "relation_labels"): relation_probs[i]
-                    for i in range(len(relation_probs))
-                }
+                {self.relation_label(i): relation_probs[i] for i in range(len(relation_probs))}
             )
         del output_dict["relation_logits"]
 
