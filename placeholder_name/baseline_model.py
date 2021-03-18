@@ -21,16 +21,14 @@ class Disrpt2021Baseline(Model):
             vocab: Vocabulary,
             embedder: TextFieldEmbedder,
             encoder: Seq2VecEncoder,
-            direction_feedforward: Optional[FeedForward] = None,
-            relation_feedforward: Optional[FeedForward] = None,
-            feedforward_dropout: float = 0.3
+            encoder_decoder_dropout=0.4,
     ):
         super().__init__(vocab)
         self.embedder = embedder
         self.encoder = encoder
         num_directions = vocab.get_vocab_size("direction_labels")
         num_relations = vocab.get_vocab_size("relation_labels")
-        self.dropout = torch.nn.Dropout(0.4)
+        self.dropout = torch.nn.Dropout(encoder_decoder_dropout)
 
         self.direction_decoder = torch.nn.Linear(encoder.get_output_dim() * 4, num_directions)
         self.relation_decoder = torch.nn.Linear(encoder.get_output_dim() * 4, num_relations)
@@ -38,7 +36,7 @@ class Disrpt2021Baseline(Model):
         self.relation_accuracy = CategoricalAccuracy()
         self.direction_accuracy = CategoricalAccuracy()
 
-    def forward(
+    def forward(  # type: ignore
             self,
             unit1_body: TextFieldTensors,
             unit1_sentence: TextFieldTensors,
@@ -67,9 +65,6 @@ class Disrpt2021Baseline(Model):
         direction_logits = self.direction_decoder(combined)
         relation_logits = self.relation_decoder(combined)
 
-        # direction_probs = F.softmax(relation_logits, dim=-1)
-        # relation_probs = F.softmax(relation_logits, dim=-1)
-
         output = {
             "direction_logits": direction_logits,
             "relation_logits": relation_logits
@@ -86,7 +81,7 @@ class Disrpt2021Baseline(Model):
         return output
 
     def make_output_human_readable(
-        self, output_dict: Dict[str, torch.Tensor]
+        self, output_dict: Dict[str, Any]
     ) -> Dict[str, Any]:
         if "gold_direction" in output_dict:
             output_dict["gold_direction"] = [
@@ -124,6 +119,6 @@ class Disrpt2021Baseline(Model):
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         return {
-            "direction_accuracy": self.direction_accuracy.get_metric(reset),
-            "relation_accuracy": self.relation_accuracy.get_metric(reset),
+            "direction_accuracy": self.direction_accuracy.get_metric(reset), # type: ignore
+            "relation_accuracy": self.relation_accuracy.get_metric(reset), # type: ignore
         }

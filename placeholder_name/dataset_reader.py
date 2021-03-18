@@ -23,7 +23,7 @@ class Disrpt2021Reader(DatasetReader):
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self.max_tokens = max_tokens  # useful for BERT
 
-    def text_to_instance(
+    def text_to_instance(  # type: ignore
             self,
             unit1_txt: str,
             unit1_sent: str,
