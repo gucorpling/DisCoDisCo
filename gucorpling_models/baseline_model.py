@@ -6,6 +6,7 @@ from allennlp.data import Vocabulary, TextFieldTensors
 from allennlp.models import Model
 from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, FeedForward
 from allennlp.nn import util
+from allennlp.nn.util import get_device_of
 from allennlp.training.metrics import CategoricalAccuracy
 
 
@@ -73,7 +74,7 @@ class Disrpt2021Baseline(Model):
                 encoded_unit2_sentence,
             ),
             1,
-        )
+        ).to(get_device_of(encoded_unit1_body))
         combined = self.dropout(combined)
 
         direction_logits = self.direction_decoder(combined)

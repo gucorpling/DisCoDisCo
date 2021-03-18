@@ -8,4 +8,4 @@ class TestBaseline(ModelTestCase):
         # that all of your parameters get non-zero gradient updates, and that we can save and load
         # your model and have the model's predictions remain consistent.
         param_file = "tests/fixtures/config.json"
-        self.ensure_model_can_train_save_and_load(param_file)
+        self.ensure_model_can_train_save_and_load(param_file, cuda_device=-1)
