@@ -51,7 +51,7 @@ jobs:
     - name: MyPy
       if: always()
       run: |
-        mypy . --exclude sharedtask2021
+        mypy .
 
     - name: PyTest
       if: always()
