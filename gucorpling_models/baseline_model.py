@@ -22,7 +22,7 @@ class Disrpt2021Baseline(Model):
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
         encoder: Seq2VecEncoder,
-        encoder_decoder_dropout=0.4,
+        encoder_decoder_dropout: float = 0.4,
     ):
         super().__init__(vocab)
         self.embedder = embedder
