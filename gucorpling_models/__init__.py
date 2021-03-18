@@ -2,7 +2,7 @@
 # If you don't have these, you'll get errors about allennlp not being able to find
 # "simple_classifier", or whatever name you registered your model with.  These imports and the
 # contents of .allennlp_plugins makes it so you can just use `allennlp train`, and we will find your
-# classes and use them.  If you change the name of `placeholder_name`, you'll also need to change it in
+# classes and use them.  If you change the name of `gucorpling_models`, you'll also need to change it in
 # the same way in the .allennlp_plugins file.
-from placeholder_name.baseline_model import *
-from placeholder_name.dataset_reader import *
+from gucorpling_models.baseline_model import *
+from gucorpling_models.dataset_reader import *

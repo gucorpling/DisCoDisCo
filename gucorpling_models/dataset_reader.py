@@ -58,19 +58,19 @@ class Disrpt2021Reader(DatasetReader):
         assert file_path.endswith(".rels")
 
         rels_file_path = file_path
-        conllu_file_path = rels_file_path.replace(".rels", ".conllu")
-        tok_file_path = rels_file_path.replace(".rels", ".tok")
+        # conllu_file_path = rels_file_path.replace(".rels", ".conllu")
+        # tok_file_path = rels_file_path.replace(".rels", ".tok")
 
         with open(rels_file_path, "r") as f:
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             # Keys:
-            ## METADATA
+            # METADATA
             # doc - name of the document
-            ## LABELS
-            # label - label of the dependency between the two units in the CODI-DISRPT 2021 constrained label vocabulary
+            # LABELS
+            # label - label of the relation between the two units in the CODI-DISRPT 2021 constrained vocabulary
             # orig_label - label of the dependency between the two units as it is in the original treebank
             # dir - 1>2 if unit 1 dominates unit 2, 1<2 otherwise
-            ## DATA
+            # DATA
             # unit1_txt, unit2_txt - DISCOURSE UNIT-level, whitespace-tokenized tokens (for use with conllu)
             # unit1_toks, unit2_toks - DISCOURSE UNIT-level, document-wide token ID range
             # unit1_sent, unit2_sent - SENTENCE-level, whitespace-tokenized tokens (for use with conllu)

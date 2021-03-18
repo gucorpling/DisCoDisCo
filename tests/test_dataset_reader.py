@@ -1,4 +1,4 @@
-from placeholder_name.dataset_reader import ClassificationTsvReader
+from gucorpling_models.dataset_reader import ClassificationTsvReader
 
 
 class TestTextClassificationJsonReader:
