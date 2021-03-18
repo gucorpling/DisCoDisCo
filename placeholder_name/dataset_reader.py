@@ -24,23 +24,23 @@ class Disrpt2021Reader(DatasetReader):
         self.max_tokens = max_tokens  # useful for BERT
 
     def text_to_instance(  # type: ignore
-            self,
-            unit1_txt: str,
-            unit1_sent: str,
-            unit2_txt: str,
-            unit2_sent: str,
-            dir: str = None,
-            label: str = None
+        self,
+        unit1_txt: str,
+        unit1_sent: str,
+        unit2_txt: str,
+        unit2_sent: str,
+        dir: str = None,
+        label: str = None,
     ) -> Instance:
         unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)
         unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
         unit2_sent_tokens = self.tokenizer.tokenize(unit2_sent)
         if self.max_tokens:
-            unit1_txt_tokens = unit1_txt_tokens[:self.max_tokens]
-            unit1_sent_tokens = unit1_sent_tokens[:self.max_tokens]
-            unit2_txt_tokens = unit2_txt_tokens[:self.max_tokens]
-            unit2_sent_tokens = unit2_sent_tokens[:self.max_tokens]
+            unit1_txt_tokens = unit1_txt_tokens[: self.max_tokens]
+            unit1_sent_tokens = unit1_sent_tokens[: self.max_tokens]
+            unit2_txt_tokens = unit2_txt_tokens[: self.max_tokens]
+            unit2_sent_tokens = unit2_sent_tokens[: self.max_tokens]
 
         fields: Dict[str, Field] = {
             "unit1_body": TextField(unit1_txt_tokens, self.token_indexers),
@@ -49,13 +49,13 @@ class Disrpt2021Reader(DatasetReader):
             "unit2_sentence": TextField(unit2_sent_tokens, self.token_indexers),
         }
         if label:
-            fields["relation"] = LabelField(label, label_namespace='relation_labels')
+            fields["relation"] = LabelField(label, label_namespace="relation_labels")
         if dir:
-            fields["direction"] = LabelField(dir, label_namespace='direction_labels')
+            fields["direction"] = LabelField(dir, label_namespace="direction_labels")
         return Instance(fields)
 
     def _read(self, file_path: str) -> Iterable[Instance]:
-        assert file_path.endswith('.rels')
+        assert file_path.endswith(".rels")
 
         rels_file_path = file_path
         conllu_file_path = rels_file_path.replace(".rels", ".conllu")
@@ -105,10 +105,10 @@ class Disrpt2021Reader(DatasetReader):
             #  's2_toks': '186-262'}
             for row in reader:
                 yield self.text_to_instance(
-                    unit1_txt=row['unit1_txt'],
-                    unit1_sent=row['unit1_sent'],
-                    unit2_txt=row['unit2_txt'],
-                    unit2_sent=row['unit2_sent'],
-                    dir=row['dir'],
-                    label=row['label']
+                    unit1_txt=row["unit1_txt"],
+                    unit1_sent=row["unit1_sent"],
+                    unit2_txt=row["unit2_txt"],
+                    unit2_sent=row["unit2_sent"],
+                    dir=row["dir"],
+                    label=row["label"],
                 )
