@@ -35,7 +35,7 @@ local embedding_dim = 768;
         }
     },
     "data_loader": {
-        "batch_size": 8,
+        "batch_size": 1,
         "shuffle": true
     },
     "trainer": {
