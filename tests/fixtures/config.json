@@ -1,5 +1,5 @@
 // This is typically a toy version of a model that you would actually want to train. We just copied
-// it from training_config/, because the model there was already a toy model.  In here, you should
+// it from configs/, because the model there was already a toy model.  In here, you should
 // use very small sizes for all model parameters, and use randomly initialized embeddings instead
 // of a pretrained transformer for your embedder, so that tests run very fast.
 {
