@@ -41,7 +41,7 @@ local embedding_dim = 768;
     "train_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
     "validation_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
     "data_loader": {
-        "batch_size": 48,
+        "batch_size": 1,
         "shuffle": true
     },
     "trainer": {
