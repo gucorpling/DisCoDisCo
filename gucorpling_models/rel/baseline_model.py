@@ -84,13 +84,10 @@ class Disrpt2021Baseline(Model):
         output = {
             "relation_logits": relation_logits,
         }
-        if direction is not None and relation is not None:
+        if relation is not None:
             self.relation_accuracy(relation_logits, relation)
-            output["gold_direction"] = direction
             output["gold_relation"] = relation
-
-            relation_loss = F.cross_entropy(relation_logits, relation)
-            output["loss"] = relation_loss
+            output["loss"] = F.cross_entropy(relation_logits, relation)
         return output
 
     def make_output_human_readable(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
