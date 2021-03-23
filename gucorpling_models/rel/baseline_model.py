@@ -30,12 +30,10 @@ class Disrpt2021Baseline(Model):
         self.encoder1 = encoder1
         self.encoder2 = encoder2
 
-        num_directions = vocab.get_vocab_size("direction_labels")
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(encoder_decoder_dropout)
 
-        linear_input_size = encoder1.get_output_dim() * 2 + encoder2.get_output_dim() * 2
-        self.direction_decoder = torch.nn.Linear(linear_input_size, num_directions)
+        linear_input_size = encoder1.get_output_dim() * 2 + encoder2.get_output_dim() * 2 + 1
         self.relation_decoder = torch.nn.Linear(linear_input_size, num_relations)
 
         # these are stateful objects that keep track of accuracy across an epoch
@@ -52,7 +50,7 @@ class Disrpt2021Baseline(Model):
         unit1_sentence: TextFieldTensors,
         unit2_body: TextFieldTensors,
         unit2_sentence: TextFieldTensors,
-        direction: torch.Tensor = None,
+        direction: torch.Tensor,
         relation: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
 
@@ -75,48 +73,32 @@ class Disrpt2021Baseline(Model):
                 encoded_unit1_sentence,
                 encoded_unit2_body,
                 encoded_unit2_sentence,
+                direction.unsqueeze(-1),
             ),
             1,
         )
         combined = self.dropout(combined)
 
-        direction_logits = self.direction_decoder(combined)
         relation_logits = self.relation_decoder(combined)
 
         output = {
-            "direction_logits": direction_logits,
             "relation_logits": relation_logits,
         }
         if direction is not None and relation is not None:
-            self.direction_accuracy(direction_logits, direction)
             self.relation_accuracy(relation_logits, relation)
             output["gold_direction"] = direction
             output["gold_relation"] = relation
 
             relation_loss = F.cross_entropy(relation_logits, relation)
-            direction_loss = F.cross_entropy(direction_logits, direction)
-            output["loss"] = relation_loss + direction_loss
+            output["loss"] = relation_loss
         return output
 
     def make_output_human_readable(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
-        if "gold_direction" in output_dict:
-            output_dict["gold_direction"] = [self.direction_label(i) for i in output_dict["gold_direction"]]
         if "gold_relation" in output_dict:
             output_dict["gold_relation"] = [self.relation_label(i) for i in output_dict["gold_relation"]]
 
-        direction_index = output_dict["direction_logits"].argmax(-1)
-        output_dict["pred_direction"] = [self.direction_label(i) for i in direction_index]
         relation_index = output_dict["relation_logits"].argmax(-1)
         output_dict["pred_relation"] = [self.relation_label(i) for i in relation_index]
-
-        output_dict["direction_probs"] = list()
-        for direction_logits_row in output_dict["direction_logits"]:
-            direction_probs = F.softmax(direction_logits_row)
-            output_dict["direction_probs"].append(
-                {self.direction_label(i): direction_probs[i] for i in range(len(direction_probs))}
-            )
-        del output_dict["direction_logits"]
-
         output_dict["relation_probs"] = []
         for relation_logits_row in output_dict["relation_logits"]:
             relation_probs = F.softmax(relation_logits_row)
@@ -129,6 +111,5 @@ class Disrpt2021Baseline(Model):
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         return {
-            "direction_accuracy": self.direction_accuracy.get_metric(reset),  # type: ignore
             "relation_accuracy": self.relation_accuracy.get_metric(reset),  # type: ignore
         }
