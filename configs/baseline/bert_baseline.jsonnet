@@ -24,7 +24,9 @@ local transformer_model_name = 'bert-base-cased';
                 "tokens": {
                     // https://docs.allennlp.org/v2.1.0/api/modules/token_embedders/pretrained_transformer_embedder/
                     "type": "pretrained_transformer",
-                    "model_name": transformer_model_name
+                    "model_name": transformer_model_name,
+                    "train_parameters": false,
+                    "last_layer_only": false
                 }
             }
         },

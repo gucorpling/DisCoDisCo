@@ -20,7 +20,9 @@
             "token_embedders": {
                 "tokens": {
                     "type": "pretrained_transformer",
-                    "model_name": "distilbert-base-cased"
+                    "model_name": "distilbert-base-cased",
+                    "train_parameters": false,
+                    "last_layer_only": false
                 }
             }
         },

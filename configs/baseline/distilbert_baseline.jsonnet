@@ -23,7 +23,9 @@ local embedding_dim = 768;
                 "tokens": {
                     // https://docs.allennlp.org/v2.1.0/api/modules/token_embedders/pretrained_transformer_embedder/
                     "type": "pretrained_transformer",
-                    "model_name": transformer_model_name
+                    "model_name": transformer_model_name,
+                    "train_parameters": false,
+                    "last_layer_only": false
                 }
             }
         },
@@ -39,7 +41,7 @@ local embedding_dim = 768;
     "train_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
     "validation_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
     "data_loader": {
-        "batch_size": 1,
+        "batch_size": 48,
         "shuffle": true
     },
     "trainer": {

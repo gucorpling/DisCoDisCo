@@ -30,7 +30,9 @@ local embedding_dim = 768 + (2 * 80);
             "token_embedders": {
                 "tokens": {
                     "type": "pretrained_transformer",
-                    "model_name": transformer_model_name
+                    "model_name": transformer_model_name,
+                    "train_parameters": false,
+                    "last_layer_only": false
                 },
                 "token_characters": {
                     "type": "character_encoding",
