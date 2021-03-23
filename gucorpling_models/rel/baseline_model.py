@@ -4,9 +4,8 @@ import torch
 import torch.nn.functional as F
 from allennlp.data import Vocabulary, TextFieldTensors
 from allennlp.models import Model
-from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, FeedForward
+from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder
 from allennlp.nn import util
-from allennlp.nn.util import get_device_of
 from allennlp.training.metrics import CategoricalAccuracy
 
 
