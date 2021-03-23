@@ -10,7 +10,7 @@ from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
 
 @DatasetReader.register("disrpt_2021")
-class Disrpt2021Reader(DatasetReader):
+class Disrpt2021SegReader(DatasetReader):
     def __init__(
         self,
         tokenizer: Tokenizer = None,
