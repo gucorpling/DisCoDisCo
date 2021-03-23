@@ -24,13 +24,7 @@ class Disrpt2021SegReader(DatasetReader):
         self.max_tokens = max_tokens  # useful for BERT
 
     def text_to_instance(  # type: ignore
-        self,
-        unit1_txt: str,
-        unit1_sent: str,
-        unit2_txt: str,
-        unit2_sent: str,
-        dir: str = None,
-        label: str = None,
+        self, unit1_txt: str, unit1_sent: str, unit2_txt: str, unit2_sent: str, dir: str = None, label: str = None,
     ) -> Instance:
         unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)

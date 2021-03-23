@@ -33,18 +33,22 @@ class Disrpt2021Baseline(Model):
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(encoder_decoder_dropout)
 
-        linear_input_size = encoder1.get_output_dim() * 2 + encoder2.get_output_dim() * 2 + 1
+        # we will decode the concatenated span reprs ...
+        linear_input_size = encoder1.get_output_dim() * 2 + encoder2.get_output_dim() * 2
+        # plus the direction label size
+        linear_input_size += 1
         self.relation_decoder = torch.nn.Linear(linear_input_size, num_relations)
 
         # these are stateful objects that keep track of accuracy across an epoch
         self.direction_accuracy = CategoricalAccuracy()
         self.relation_accuracy = CategoricalAccuracy()
 
-        # convenience functions for turning indices into labels
-        self.direction_label = lambda i: self.vocab.get_token_from_index(int(i), "direction_labels")
-        self.relation_label = lambda i: self.vocab.get_token_from_index(int(i), "relation_labels")
+        # convenience dict mapping relation indices to labels
+        self.relation_labels = {
+            i: self.vocab.get_token_from_index(int(i)) for i in range(self.vocab.get_vocab_size("relation_labels"))
+        }
 
-    def forward(  # type: ignore
+    def forward(
         self,
         unit1_body: TextFieldTensors,
         unit1_sentence: TextFieldTensors,
@@ -66,7 +70,7 @@ class Disrpt2021Baseline(Model):
         encoded_unit2_body = self.encoder2(embedded_unit2_body, util.get_text_field_mask(unit2_body))
         encoded_unit2_sentence = self.encoder2(embedded_unit2_sentence, util.get_text_field_mask(unit2_sentence))
 
-        # Concatenate the vectors. Shape: (batch_size, encoder1_output_dim * 2 + encoder2_output_dim * 2)
+        # Concatenate the vectors. Shape: (batch_size, encoder1_output_dim * 2 + encoder2_output_dim * 2 + 1)
         combined = torch.cat(
             (
                 encoded_unit1_body,
@@ -77,8 +81,11 @@ class Disrpt2021Baseline(Model):
             ),
             1,
         )
+
+        # Apply dropout
         combined = self.dropout(combined)
 
+        # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)
 
         output = {
@@ -90,18 +97,29 @@ class Disrpt2021Baseline(Model):
             output["loss"] = F.cross_entropy(relation_logits, relation)
         return output
 
+    # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
+    # Note that the output dict, because it's just from forward(), represents a batch, not a single
+    # instance: every key will have a list that's the size of the batch
     def make_output_human_readable(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
+        # if we have the gold label, decode it into a string
         if "gold_relation" in output_dict:
-            output_dict["gold_relation"] = [self.relation_label(i) for i in output_dict["gold_relation"]]
+            output_dict["gold_relation"] = [self.relation_labels[i] for i in output_dict["gold_relation"]]
 
+        # output_dict["relation_logits"] is a tensor of shape (batch_size, num_relations): argmax over the last
+        # to get the most likely relation for each instance in the batch
         relation_index = output_dict["relation_logits"].argmax(-1)
-        output_dict["pred_relation"] = [self.relation_label(i) for i in relation_index]
+        # turn each one into a label
+        output_dict["pred_relation"] = [self.relation_labels[i] for i in relation_index]
+
+        # turn relation logits into relation probabilities and present them in a dict
+        # where the name of the relation (a string) maps to the probability
         output_dict["relation_probs"] = []
         for relation_logits_row in output_dict["relation_logits"]:
             relation_probs = F.softmax(relation_logits_row)
             output_dict["relation_probs"].append(
-                {self.relation_label(i): relation_probs[i] for i in range(len(relation_probs))}
+                {self.relation_labels[i]: relation_probs[i] for i in range(len(relation_probs))}
             )
+        # remove the logits (humans prefer probs)
         del output_dict["relation_logits"]
 
         return output_dict
