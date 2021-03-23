@@ -44,9 +44,7 @@ class Disrpt2021Baseline(Model):
         self.relation_accuracy = CategoricalAccuracy()
 
         # convenience dict mapping relation indices to labels
-        self.relation_labels = {
-            i: self.vocab.get_token_from_index(int(i)) for i in range(self.vocab.get_vocab_size("relation_labels"))
-        }
+        self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")
 
     def forward(
         self,
@@ -103,13 +101,13 @@ class Disrpt2021Baseline(Model):
     def make_output_human_readable(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
         # if we have the gold label, decode it into a string
         if "gold_relation" in output_dict:
-            output_dict["gold_relation"] = [self.relation_labels[i] for i in output_dict["gold_relation"]]
+            output_dict["gold_relation"] = [self.relation_labels[i.item()] for i in output_dict["gold_relation"]]
 
         # output_dict["relation_logits"] is a tensor of shape (batch_size, num_relations): argmax over the last
         # to get the most likely relation for each instance in the batch
         relation_index = output_dict["relation_logits"].argmax(-1)
         # turn each one into a label
-        output_dict["pred_relation"] = [self.relation_labels[i] for i in relation_index]
+        output_dict["pred_relation"] = [self.relation_labels[i.item()] for i in relation_index]
 
         # turn relation logits into relation probabilities and present them in a dict
         # where the name of the relation (a string) maps to the probability
