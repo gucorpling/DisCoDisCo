@@ -137,7 +137,7 @@ TODO, but see https://guide.allennlp.org/using-config-files/
 
 ### Coding New Models
 
-TODO, but for now see [baseline_model](gucorpling_models/baseline_model.py)
+TODO, but for now see [baseline_model](gucorpling_models/rel/baseline_model.py)
 
 
 # AllenNLP Template Project using Config Files
