@@ -1,9 +1,9 @@
-from gucorpling_models.rel.dataset_reader import Disrpt2021Reader
+from gucorpling_models.rel.dataset_reader import Disrpt2021SegReader
 
 
 class TestDisrpt2021TsvReader:
     def test_read_from_eng_rst_gum_sample(self):
-        reader = Disrpt2021Reader()
+        reader = Disrpt2021SegReader()
         data_path = "tests/fixtures/toy_data.rels"
         instances = list(reader.read(data_path))
 
