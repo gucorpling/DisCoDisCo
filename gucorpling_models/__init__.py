@@ -4,5 +4,5 @@
 # contents of .allennlp_plugins makes it so you can just use `allennlp train`, and we will find your
 # classes and use them.  If you change the name of `gucorpling_models`, you'll also need to change it in
 # the same way in the .allennlp_plugins file.
-from gucorpling_models.baseline_model import *
-from gucorpling_models.dataset_reader import *
+from gucorpling_models.rel.baseline_model import *
+from gucorpling_models.rel.dataset_reader import *
