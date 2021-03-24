@@ -3,7 +3,7 @@ local transformer_model_name = 'bert-base-cased';
 // For more info on config files generally, see https://guide.allennlp.org/using-config-files
 {
     "dataset_reader" : {
-        "type": "disrpt_2021",
+        "type": "disrpt_2021_rel",
         "token_indexers": {
             "tokens": {
                 "type": "pretrained_transformer",
@@ -18,7 +18,7 @@ local transformer_model_name = 'bert-base-cased';
     "train_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
     "validation_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
     "model": {
-        "type": "disrpt_2021_baseline",
+        "type": "disrpt_2021_rel_baseline",
         "embedder": {
             "token_embedders": {
                 "tokens": {

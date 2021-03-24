@@ -9,8 +9,8 @@ from allennlp.nn import util
 from allennlp.training.metrics import CategoricalAccuracy
 
 
-@Model.register("disrpt_2021_baseline")
-class Disrpt2021Baseline(Model):
+@Model.register("disrpt_2021_rel_baseline")
+class Disrpt2021RelBaseline(Model):
     """
     A simple encoder-decoder baseline which embeds all four spans (each unit's sentence and discourse unit),
     uses a seq2vec encoder to encode each span, and decodes using a simple linear transform
@@ -46,7 +46,7 @@ class Disrpt2021Baseline(Model):
         # convenience dict mapping relation indices to labels
         self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")
 
-    def forward(
+    def forward(  # type: ignore
         self,
         unit1_body: TextFieldTensors,
         unit1_sentence: TextFieldTensors,

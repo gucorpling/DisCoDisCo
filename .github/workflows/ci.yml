@@ -41,17 +41,18 @@ jobs:
     - name: Black
       if: always()
       run: |
-        black . -l 120 --check --exclude sharedtask2021
+        black . -l 120 --check --exclude "sharedtask2021|sharedtask2019"
 
     - name: Flake8
       if: always()
       run: |
-        flake8 . --exclude sharedtask2021
+        flake8 . --exclude sharedtask2021,sharedtask2019 --max-line-length 120
 
     - name: MyPy
       if: always()
       run: |
-        mypy .
+        mypy gucorpling_models
+        mypy tests
 
     - name: PyTest
       if: always()

@@ -4,7 +4,7 @@ local embedding_dim = 768;
 // For more info on config files generally, see https://guide.allennlp.org/using-config-files
 {
     "dataset_reader" : {
-        "type": "disrpt_2021",
+        "type": "disrpt_2021_rel",
         "token_indexers": {
             "tokens": {
                 "type": "pretrained_transformer",
@@ -17,7 +17,7 @@ local embedding_dim = 768;
         }
     },
     "model": {
-        "type": "disrpt_2021_baseline",
+        "type": "disrpt_2021_rel_baseline",
         "embedder": {
             "token_embedders": {
                 "tokens": {

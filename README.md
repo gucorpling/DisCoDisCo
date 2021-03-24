@@ -48,7 +48,9 @@ Invoke `allennlp train`. The first argument tells AllenNLP which configuration t
 it where to save the model that it trains.
 
 ```bash
-allennlp train configs/baseline/distilbert_baseline.jsonnet -s models/distilbert_baseline
+allennlp train configs/rel/baseline/distilbert_baseline.jsonnet -s models/rel_distilbert_baseline
+# or 
+allennlp train configs/seg/baseline/distilbert_baseline.jsonnet -s models/seg_distilbert_baseline
 ```
 
 ### Predicting
@@ -61,6 +63,12 @@ which input data to predict on.
 allennlp predict \ 
         models/distilbert_baseline/model.tar.gz \
         sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels \
+        --use-dataset-reader \
+        --output-file /tmp/predictions.txt
+# or 
+allennlp predict \
+        models/seg_distilbert_baseline/model.tar.gz \
+        sharedtask2019/data/eng.rst.gum/eng.rst.gum_test.conll \
         --use-dataset-reader \
         --output-file /tmp/predictions.txt
 ```
@@ -94,16 +102,10 @@ input 162:  Instance with fields:
 
 # the prediction output
 {
-   "pred_direction":"1<2",
-   "gold_direction":"1>2",
    "pred_relation":"attribution",
    "gold_relation":"attribution",
    "loss":1.1672526597976685,
-   "direction_probs":{
-      "1<2":0.6482446789741516,
-      "1>2":0.3517552614212036
-   },
-   "relation_probs":{
+      "relation_probs":{
       "elaboration":0.0178113654255867,
       "joint":0.0076534380204975605,
       "sequence":0.012619145214557648,

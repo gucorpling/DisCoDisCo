@@ -9,8 +9,8 @@ from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
 
-@DatasetReader.register("disrpt_2021")
-class Disrpt2021SegReader(DatasetReader):
+@DatasetReader.register("disrpt_2021_rel")
+class Disrpt2021RelReader(DatasetReader):
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -24,7 +24,13 @@ class Disrpt2021SegReader(DatasetReader):
         self.max_tokens = max_tokens  # useful for BERT
 
     def text_to_instance(  # type: ignore
-        self, unit1_txt: str, unit1_sent: str, unit2_txt: str, unit2_sent: str, dir: str = None, label: str = None,
+        self,
+        unit1_txt: str,
+        unit1_sent: str,
+        unit2_txt: str,
+        unit2_sent: str,
+        dir: str,
+        label: str = None,
     ) -> Instance:
         unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)
@@ -41,11 +47,10 @@ class Disrpt2021SegReader(DatasetReader):
             "unit1_sentence": TextField(unit1_sent_tokens, self.token_indexers),
             "unit2_body": TextField(unit2_txt_tokens, self.token_indexers),
             "unit2_sentence": TextField(unit2_sent_tokens, self.token_indexers),
+            "direction": LabelField(dir, label_namespace="direction_labels"),
         }
         if label:
             fields["relation"] = LabelField(label, label_namespace="relation_labels")
-        if dir:
-            fields["direction"] = LabelField(dir, label_namespace="direction_labels")
         return Instance(fields)
 
     def _read(self, file_path: str) -> Iterable[Instance]:
@@ -79,8 +84,9 @@ class Disrpt2021SegReader(DatasetReader):
             #  ## labels
             #  'label': 'preparation',
             #  'orig_label': 'preparation',
-            #  'dir': '1>2',
             #  ## data
+            #  'dir': '1>2',
+            #
             #  'unit1_txt': 'Introduction',
             #  'unit1_toks': '1',
             #  'unit1_sent': 'Introduction',
