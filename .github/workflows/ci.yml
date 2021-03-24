@@ -41,12 +41,12 @@ jobs:
     - name: Black
       if: always()
       run: |
-        black . -l 120 --check --exclude "sharedtask2021|sharedtask2019"
+        black . -l 120 --check --exclude "sharedtask2021|sharedtask2019|scripts"
 
     - name: Flake8
       if: always()
       run: |
-        flake8 . --exclude sharedtask2021,sharedtask2019 --max-line-length 120
+        flake8 . --exclude sharedtask2021,sharedtask2019,scripts --max-line-length 120
 
     - name: MyPy
       if: always()
