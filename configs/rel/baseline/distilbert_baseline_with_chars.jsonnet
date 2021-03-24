@@ -12,10 +12,7 @@ local embedding_dim = 768 + (2 * 80);
                 "type": "pretrained_transformer",
                 "model_name": transformer_model_name
             },
-            "token_characters": {
-                "type": "characters",
-                "min_padding_length": 1
-            }
+            "token_characters": import "../components/char_indexer.libsonnet"
         },
         "tokenizer": {
             "type": "pretrained_transformer",
@@ -34,21 +31,7 @@ local embedding_dim = 768 + (2 * 80);
                     "train_parameters": false,
                     "last_layer_only": false
                 },
-                "token_characters": {
-                    "type": "character_encoding",
-                    "embedding": {
-                        "embedding_dim": 25,
-                        "vocab_namespace": "token_characters"
-                    },
-                    "encoder": {
-                        "type": "gru",
-                        "input_size": 25,
-                        "hidden_size": 80,
-                        "num_layers": 2,
-                        "dropout": 0.0,
-                        "bidirectional": true
-                    }
-                }
+                "token_characters": import "../components/char_embedder.libsonnet"
             }
         },
         // encoders: see https://docs.allennlp.org/v2.1.0/api/modules/seq2vec_encoders/boe_encoder/
