@@ -99,10 +99,10 @@ class Disrpt2021Baseline(Model):
 
         # Decoding --------------------------------------------------
         label_logits = self.tag_projection_layer(encoded_sequence)
-        best_paths = self.crf.viterbi_tags(label_logits, mask, top_k=None)
+        best_label_seqs = self.crf.viterbi_tags(label_logits, mask, top_k=None)
         # each in the batch gets a (tags, viterbi_score) pair
         # just take the tags, ignore the viterbi score
-        pred_labels = [top_k_results[0] for top_k_results in best_paths]
+        pred_labels = [best_label_seq for best_label_seq, _ in best_label_seqs]
 
         output = {
             "label_logits": label_logits,
