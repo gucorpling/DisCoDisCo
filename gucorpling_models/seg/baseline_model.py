@@ -55,7 +55,7 @@ class Disrpt2021Baseline(Model):
         )
 
         # decoding --------------------------------------------------
-        self.tag_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
+        self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
 
         # TODO: implement contrained decoding
         self.crf = ConditionalRandomField(num_labels, None, include_start_end_transitions=True)
@@ -99,7 +99,7 @@ class Disrpt2021Baseline(Model):
         encoded_sequence = self.dropout(encoded_sequence)
 
         # Decoding --------------------------------------------------
-        label_logits = self.tag_projection_layer(encoded_sequence)
+        label_logits = self.label_projection_layer(encoded_sequence)
         best_label_seqs = self.crf.viterbi_tags(label_logits, mask, top_k=None)
         # each in the batch gets a (tags, viterbi_score) pair
         # just take the tags, ignore the viterbi score
@@ -117,8 +117,7 @@ class Disrpt2021Baseline(Model):
             log_likelihood = self.crf(label_logits, labels, mask)
             output["loss"] = -log_likelihood
 
-            # Represent viterbi tags as "class probabilities" that we can
-            # feed into the metrics
+            # Represent viterbi labels as "class probabilities" that we can feed into the metrics
             class_probabilities = label_logits * 0.0
             for i, instance_labels in enumerate(pred_labels):
                 for j, label_id in enumerate(instance_labels):
