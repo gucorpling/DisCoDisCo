@@ -15,7 +15,7 @@ from allennlp.modules import (
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn import util, Activation
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 
 @Model.register("disrpt_2021_seg_baseline")
@@ -63,6 +63,7 @@ class Disrpt2021Baseline(Model):
         # util --------------------------------------------------
         # these are stateful objects that keep track of accuracy across an epoch
         self.label_accuracy = CategoricalAccuracy()
+        self._label_f1 = F1Measure(1)
 
         # convenience dict mapping indices to labels
         self.labels = self.vocab.get_index_to_token_vocabulary("labels")
@@ -124,6 +125,7 @@ class Disrpt2021Baseline(Model):
                     class_probabilities[i, j, label_id] = 1
 
             self.label_accuracy(class_probabilities, labels, mask)
+            self._label_f1(class_probabilities, labels, mask)
 
         return output
 
@@ -142,4 +144,5 @@ class Disrpt2021Baseline(Model):
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         return {
             "accuracy": self.label_accuracy.get_metric(reset),  # type: ignore
+            "_f1": self._label_f1.get_metric(reset),  # type: ignore
         }
