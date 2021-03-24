@@ -14,7 +14,7 @@ from allennlp.modules import (
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn import util, Activation
-from allennlp.nn.util import get_text_field_mask
+from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 
@@ -36,6 +36,7 @@ class Disrpt2021Baseline(Model):
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
         dropout: float = 0.4,
+        use_crf: bool = True,
     ):
         super().__init__(vocab)
         print(vocab)
@@ -58,7 +59,10 @@ class Disrpt2021Baseline(Model):
         self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
 
         # TODO: implement contrained decoding
-        self.crf = ConditionalRandomField(num_labels, None, include_start_end_transitions=True)
+        if use_crf:
+            self.crf = ConditionalRandomField(num_labels, None, include_start_end_transitions=True)
+        else:
+            self.crf = None
 
         # util --------------------------------------------------
         # these are stateful objects that keep track of accuracy across an epoch
@@ -73,7 +77,7 @@ class Disrpt2021Baseline(Model):
         sentence: TextFieldTensors,
         prev_sentence: TextFieldTensors,
         next_sentence: TextFieldTensors,
-        labels: torch.Tensor = None,
+        labels: torch.LongTensor = None,
     ) -> Dict[str, torch.Tensor]:
         mask = get_text_field_mask(sentence)
 
@@ -100,10 +104,13 @@ class Disrpt2021Baseline(Model):
 
         # Decoding --------------------------------------------------
         label_logits = self.label_projection_layer(encoded_sequence)
-        best_label_seqs = self.crf.viterbi_tags(label_logits, mask, top_k=None)
-        # each in the batch gets a (tags, viterbi_score) pair
-        # just take the tags, ignore the viterbi score
-        pred_labels = [best_label_seq for best_label_seq, _ in best_label_seqs]
+        if self.crf:
+            best_label_seqs = self.crf.viterbi_tags(label_logits, mask, top_k=None)
+            # each in the batch gets a (tags, viterbi_score) pair
+            # just take the tags, ignore the viterbi score
+            pred_labels = [best_label_seq for best_label_seq, _ in best_label_seqs]
+        else:
+            pred_labels = label_logits.argmax(-1)
 
         output = {
             "label_logits": label_logits,
@@ -114,17 +121,23 @@ class Disrpt2021Baseline(Model):
             output["gold_labels"] = labels
 
             # Add negative log-likelihood as loss
-            log_likelihood = self.crf(label_logits, labels, mask)
-            output["loss"] = -log_likelihood
+            if self.crf:
+                log_likelihood = self.crf(label_logits, labels, mask)
+                output["loss"] = -log_likelihood
+            else:
+                output["loss"] = sequence_cross_entropy_with_logits(label_logits, labels, mask)
 
-            # Represent viterbi labels as "class probabilities" that we can feed into the metrics
-            class_probabilities = label_logits * 0.0
-            for i, instance_labels in enumerate(pred_labels):
-                for j, label_id in enumerate(instance_labels):
-                    class_probabilities[i, j, label_id] = 1
-
-            self.label_accuracy(class_probabilities, labels, mask)
-            self._label_f1(class_probabilities, labels, mask)
+            if self.crf:
+                # Represent viterbi labels as "class probabilities" that we can feed into the metrics
+                class_probabilities = label_logits * 0.0
+                for i, instance_labels in enumerate(pred_labels):
+                    for j, label_id in enumerate(instance_labels):
+                        class_probabilities[i, j, label_id] = 1
+                self.label_accuracy(class_probabilities, labels, mask)
+                self._label_f1(class_probabilities, labels, mask)
+            else:
+                self.label_accuracy(label_logits, labels, mask)
+                self._label_f1(label_logits, labels, mask)
 
         return output
 
