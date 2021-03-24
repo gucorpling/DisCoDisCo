@@ -1,5 +1,6 @@
 local transformer_model_name = 'distilbert-base-cased';
 local embedding_dim = 768;
+local target_corpus = "eng.rst.gum";
 
 local context_encoder = {
     "type": "lstm",
@@ -47,8 +48,8 @@ local context_encoder = {
             "num_attention_heads": 4,
         }
     },
-    "train_data_path": "sharedtask2019/data/eng.rst.gum/eng.rst.gum_train.conll",
-    "validation_data_path": "sharedtask2019/data/eng.rst.gum/eng.rst.gum_dev.conll",
+    "train_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_train.conll",
+    "validation_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_dev.conll",
     "data_loader": {
         "batch_size": 20,
         "shuffle": true
