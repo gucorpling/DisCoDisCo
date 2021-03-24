@@ -60,7 +60,9 @@ class Disrpt2021Baseline(Model):
 
         # TODO: implement contrained decoding
         if use_crf:
-            self.crf = ConditionalRandomField(num_labels, None, include_start_end_transitions=True)
+            self.crf: Optional[ConditionalRandomField] = ConditionalRandomField(
+                num_labels, None, include_start_end_transitions=True
+            )
         else:
             self.crf = None
 
