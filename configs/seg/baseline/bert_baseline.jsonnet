@@ -1,11 +1,11 @@
-local transformer_model_name = 'distilbert-base-cased';
+local transformer_model_name = 'roberta-base';
 local embedding_dim = 768;
 local target_corpus = "eng.rst.gum";
 
 local context_encoder = {
     "type": "lstm",
     "input_size": embedding_dim,
-    "hidden_size": 100,
+    "hidden_size": 50,
     "num_layers": 1,
     "bidirectional": true,
     "dropout": 0.4
@@ -45,18 +45,21 @@ local context_encoder = {
             "type": "pytorch_transformer", // http://docs.allennlp.org/main/api/modules/seq2seq_encoders/pytorch_transformer_wrapper/
             "input_dim": embedding_dim,
             "num_layers": 1,
-            "feedforward_hidden_dim": 512,
-            "num_attention_heads": 4,
+            "feedforward_hidden_dim": 256,
+            "num_attention_heads": 2,
         }
     },
     "train_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_train.conll",
     "validation_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_dev.conll",
     "data_loader": {
-        "batch_size": 20,
+        "batch_size": 128,
         "shuffle": true
     },
     "trainer": {
-        "optimizer": "adam",
-        "num_epochs": 20
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.005,
+        },
+        "num_epochs": 20,
     }
 }

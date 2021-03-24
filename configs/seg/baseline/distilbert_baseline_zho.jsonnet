@@ -7,7 +7,8 @@ local context_encoder = {
     "input_size": embedding_dim,
     "hidden_size": 100,
     "num_layers": 1,
-    "bidirectional": true
+    "bidirectional": true,
+    "dropout": 0.4
 };
 
 // For more info on config files generally, see https://guide.allennlp.org/using-config-files
