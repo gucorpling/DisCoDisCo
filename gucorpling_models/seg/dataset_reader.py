@@ -3,15 +3,16 @@
 
 import csv
 import os
-from typing import Dict, Iterable, Any, List, Optional
+from typing import Dict, Iterable, Any, List, Optional, Tuple
 from pprint import pprint
 
+import torch
 from allennlp.data import DatasetReader, Instance, Field
-from allennlp.data.fields import LabelField, TextField, SequenceLabelField
+from allennlp.data.fields import LabelField, TextField, SequenceLabelField, AdjacencyField, TensorField, ListField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
-from gucorpling_models.seg.util import read_conll_conn
+from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 
 
 def group_by_sentence(token_dicts: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
@@ -30,6 +31,12 @@ def group_by_sentence(token_dicts: List[Dict[str, Any]]) -> List[List[Dict[str, 
     if sentence:
         sentences.append(sentence)
     return sentences
+
+
+LABEL_TO_ENCODING = {
+    "BeginSeg": "B",
+    "_": "O",
+}
 
 
 @DatasetReader.register("disrpt_2021_seg")
@@ -53,6 +60,15 @@ class Disrpt2021SegReader(DatasetReader):
         sentence: str,
         prev_sentence: Optional[str],
         next_sentence: Optional[str],
+        pos_tags: List[str],
+        cpos_tags: List[str],
+        dep_heads: List[int],
+        dep_rels: List[str],
+        head_dists: List[str],
+        lemmas: List[str],
+        morphs: List[str],
+        s_type: List[str],
+        sent_doc_percentile: List[str],
         labels: List[str],
     ) -> Instance:
         if prev_sentence is None:
@@ -77,10 +93,21 @@ class Disrpt2021SegReader(DatasetReader):
             )
 
         sentence_field = TextField(sentence_tokens, self.token_indexers)
+        # note: if a namespace ends in _tags, it won't get an OOV token automatically. Use only
+        # for fields where you're 100% certain all values will occur in train
         fields: Dict[str, Field] = {
             "sentence": sentence_field,
             "prev_sentence": TextField(prev_sentence_tokens, self.token_indexers),
             "next_sentence": TextField(next_sentence_tokens, self.token_indexers),
+            "pos_tags": SequenceLabelField(pos_tags, sentence_field, label_namespace="pos_tags"),
+            "cpos_tags": SequenceLabelField(cpos_tags, sentence_field, label_namespace="cpos_tags"),
+            "dep_heads": TensorField(torch.tensor(dep_heads)),
+            "dep_rels": SequenceLabelField(dep_rels, sentence_field, label_namespace="dep_rels_tags"),
+            "head_dists": TensorField(torch.tensor(head_dists)),
+            "lemmas": SequenceLabelField(lemmas, sentence_field, label_namespace="lemmas"),
+            "morphs": SequenceLabelField(morphs, sentence_field, label_namespace="morphs"),
+            "s_type": SequenceLabelField(morphs, sentence_field, label_namespace="s_types"),
+            "sent_doc_percentile": TensorField(torch.tensor(sent_doc_percentile)),
         }
         if labels:
             fields["labels"] = SequenceLabelField(labels, sentence_field)
@@ -97,13 +124,44 @@ class Disrpt2021SegReader(DatasetReader):
         token_dicts_by_sentence = group_by_sentence(token_dicts)
         sentence_strings = [" ".join(td["word"] for td in sentence) for sentence in token_dicts_by_sentence]
 
+        # syntax -- subtract one from head
+        # dep_heads = [
+        #     # we need an edge from the parent to this node, zero-indexed. For the root, have it point to itself
+        #     # TODO: check how other code handles this.. maybe don't want (i, i)
+        #     #[(int(td["head"]) - 1, i) if int(td["head"]) != 0 else (i, i) for i, td in enumerate(sentence)]
+        #     for sentence in token_dicts_by_sentence
+        # ]
+
+        # syntactic
+        pos_tags = [[td["pos"] for td in sentence] for sentence in token_dicts_by_sentence]
+        cpos_tags = [[td["cpos"] for td in sentence] for sentence in token_dicts_by_sentence]
+        dep_heads = [[int(td["head"]) - 1 for td in sentence] for sentence in token_dicts_by_sentence]
+        dep_rels = [[td["deprel"] for td in sentence] for sentence in token_dicts_by_sentence]
+        head_dists = [[td["head_dist"] for td in sentence] for sentence in token_dicts_by_sentence]
+        lemmas = [[td["lemma"] for td in sentence] for sentence in token_dicts_by_sentence]
+        morphs = [[td["morph"] for td in sentence] for sentence in token_dicts_by_sentence]
+        s_type = [[td["s_type"] for td in sentence] for sentence in token_dicts_by_sentence]
+        sent_doc_percentile = [[td["sent_doc_percentile"] for td in sentence] for sentence in token_dicts_by_sentence]
+
+        # textual
+
         for i, token_dicts in enumerate(token_dicts_by_sentence):
             prev_sentence = sentence_strings[i - 1] if i > 0 else None
             next_sentence = sentence_strings[i + 1] if i < len(token_dicts_by_sentence) - 1 else None
             sentence = sentence_strings[i]
+            labels = [LABEL_TO_ENCODING[td["label"]] for td in token_dicts]
             yield self.text_to_instance(
                 sentence=sentence,
                 prev_sentence=prev_sentence,
                 next_sentence=next_sentence,
-                labels=[td["label"] for td in token_dicts],
+                pos_tags=pos_tags[i],
+                cpos_tags=cpos_tags[i],
+                dep_heads=dep_heads[i],
+                dep_rels=dep_rels[i],
+                head_dists=head_dists[i],
+                lemmas=lemmas[i],
+                morphs=morphs[i],
+                s_type=s_type[i],
+                sent_doc_percentile=sent_doc_percentile[i],
+                labels=labels,
             )

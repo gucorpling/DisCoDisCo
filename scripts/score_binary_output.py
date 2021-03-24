@@ -5,8 +5,8 @@ if len(sys.argv) == 1:
     print("Provide an output filename created with `allennlp predict`")
     sys.exit(1)
 
-POSITIVE_LABEL = "BeginSeg"
-NEGATIVE_LABEL = "_"
+POSITIVE_LABEL = "B"
+NEGATIVE_LABEL = "O"
 
 
 import json

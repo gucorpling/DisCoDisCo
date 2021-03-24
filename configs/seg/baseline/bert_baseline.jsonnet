@@ -1,4 +1,4 @@
-local transformer_model_name = 'roberta-base';
+local transformer_model_name = 'bert-base-cased';
 local embedding_dim = 768;
 local target_corpus = "eng.rst.gum";
 
@@ -8,7 +8,7 @@ local context_encoder = {
     "hidden_size": 50,
     "num_layers": 1,
     "bidirectional": true,
-    "dropout": 0.4
+    "dropout": 0.3
 };
 
 // For more info on config files generally, see https://guide.allennlp.org/using-config-files
@@ -21,9 +21,7 @@ local context_encoder = {
                 "model_name": transformer_model_name
             }
         },
-        "tokenizer": {
-            "type": "whitespace"
-        }
+        "tokenizer": "whitespace"
     },
     "model": {
         "type": "disrpt_2021_seg_baseline",
@@ -44,9 +42,10 @@ local context_encoder = {
         "encoder": {
             "type": "pytorch_transformer", // http://docs.allennlp.org/main/api/modules/seq2seq_encoders/pytorch_transformer_wrapper/
             "input_dim": embedding_dim,
-            "num_layers": 1,
-            "feedforward_hidden_dim": 256,
+            "num_layers": 3,
+            "feedforward_hidden_dim": 128,
             "num_attention_heads": 2,
+            "dropout_prob": 0.2
         }
     },
     "train_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_train.conll",
