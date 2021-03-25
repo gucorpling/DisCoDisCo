@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import torch
 import torch.nn.functional as F
@@ -84,6 +84,7 @@ class Disrpt2021Baseline(Model):
         sentence: TextFieldTensors,
         prev_sentence: TextFieldTensors,
         next_sentence: TextFieldTensors,
+        original_sentence_length: List[int],
         labels: torch.LongTensor = None,
         *args,
         **kwargs,
@@ -109,7 +110,7 @@ class Disrpt2021Baseline(Model):
         time_distributed_context = context.unsqueeze(1).expand(-1, encoded_sentence.shape[1], -1)
         # Get our handcrafted features
         combined_feature_tensor = torch.cat([kwargs[key].unsqueeze(-1) for key in FEATURES.keys()], dim=2)
-        combined_feature_tensor = F.dropout(combined_feature_tensor, p=0.3, training=self.training)
+        combined_feature_tensor = self.dropout(combined_feature_tensor)
 
         # We now have (batch_size, num_tokens, h_0 + h_1 + h_2 + NUM_FEATS)
         encoder_input = torch.cat((encoded_sentence, time_distributed_context, combined_feature_tensor), dim=2)
@@ -120,13 +121,9 @@ class Disrpt2021Baseline(Model):
 
         # Decoding --------------------------------------------------
         label_logits = self.label_projection_layer(encoded_sequence)
-        if self.crf:
-            best_label_seqs = self.crf.viterbi_tags(label_logits, mask, top_k=None)
-            # each in the batch gets a (tags, viterbi_score) pair
-            # just take the tags, ignore the viterbi score
-            pred_labels = [best_label_seq for best_label_seq, _ in best_label_seqs]
-        else:
-            pred_labels = label_logits.argmax(-1)
+        pred_labels = [
+            best_label_seq for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
+        ]
 
         output = {
             "label_logits": label_logits,

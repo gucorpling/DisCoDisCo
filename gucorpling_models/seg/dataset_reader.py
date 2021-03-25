@@ -8,7 +8,7 @@ from pprint import pprint
 
 import torch
 from allennlp.data import DatasetReader, Instance, Field
-from allennlp.data.fields import LabelField, TextField, SequenceLabelField, AdjacencyField, TensorField, ListField
+from allennlp.data.fields import LabelField, TextField, SequenceLabelField, MetadataField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
@@ -37,6 +37,8 @@ def group_by_sentence(token_dicts: List[Dict[str, Any]]) -> List[List[Dict[str, 
 LABEL_TO_ENCODING = {
     "BeginSeg": "B",
     "_": "O",
+    "Seg=B-Conn": "B-Conn",
+    "Seg=I-Conn": "I-Conn",
 }
 
 
@@ -56,6 +58,11 @@ class Disrpt2021SegReader(DatasetReader):
         self.max_tokens = max_tokens  # useful for BERT
         self.document_boundary_token = document_boundary_token
 
+    def apply_token_indexers(self, instance: Instance) -> None:
+        instance.fields["sentence"].token_indexers = self.token_indexers
+        instance.fields["prev_sentence"].token_indexers = self.token_indexers
+        instance.fields["next_sentence"].token_indexers = self.token_indexers
+
     def text_to_instance(  # type: ignore
         self,
         sentence: str,
@@ -70,8 +77,10 @@ class Disrpt2021SegReader(DatasetReader):
         if next_sentence is None:
             next_sentence = self.document_boundary_token
         sentence_tokens = self.tokenizer.tokenize(sentence)
+        original_sentence_length = len(sentence_tokens)
         prev_sentence_tokens = self.tokenizer.tokenize(prev_sentence)
         next_sentence_tokens = self.tokenizer.tokenize(next_sentence)
+        # TODO: wordpiece tokenization ruins this, think about a solution
         if self.max_tokens:
             sentence_tokens = sentence_tokens[: self.max_tokens]
             prev_sentence_tokens = prev_sentence_tokens[: self.max_tokens]
@@ -86,13 +95,14 @@ class Disrpt2021SegReader(DatasetReader):
                 "http://docs.allennlp.org/main/api/data/token_indexers/pretrained_transformer_mismatched_indexer/"
             )
 
-        sentence_field = TextField(sentence_tokens, self.token_indexers)
+        sentence_field = TextField(sentence_tokens)
         # note: if a namespace ends in _tags, it won't get an OOV token automatically. Use only
         # for fields where you're 100% certain all values will occur in train
         fields: Dict[str, Field] = {
             "sentence": sentence_field,
-            "prev_sentence": TextField(prev_sentence_tokens, self.token_indexers),
-            "next_sentence": TextField(next_sentence_tokens, self.token_indexers),
+            "prev_sentence": TextField(prev_sentence_tokens),
+            "next_sentence": TextField(next_sentence_tokens),
+            "original_sentence_length": MetadataField(original_sentence_length),
         }
 
         # read in handcrafted features
