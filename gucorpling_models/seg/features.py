@@ -11,12 +11,12 @@ from allennlp.data.fields import TensorField, TextField, SequenceLabelField
 #                               NOTE: OOV tokens will be added unless it ends in _tags
 FEATURES: Dict[str, Dict[str, Any]] = {
     # UD pos tags
-    "pos_tags": {"source_key": "pos", "label_namespace": "upos_tags"},
+    "pos_tags": {"source_key": "pos", "label_namespace": "upos"},
     # PTB pos tags
-    "cpos_tags": {"source_key": "cpos", "label_namespace": "xpos_tags"},
+    "cpos_tags": {"source_key": "cpos", "label_namespace": "xpos"},
     # UD syntax
     "dep_heads": {"source_key": "head", "deserialize": lambda val: int(val) - 1},
-    "dep_rels": {"source_key": "deprel", "label_namespace": "deprel_tags"},
+    "dep_rels": {"source_key": "deprel", "label_namespace": "deprel"},
     # distance (in tokens) to the head
     "head_distances": {"source_key": "head_dist"},
     # length of each token in chars
