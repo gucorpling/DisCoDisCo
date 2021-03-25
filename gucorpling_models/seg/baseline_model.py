@@ -39,7 +39,8 @@ class Disrpt2021Baseline(Model):
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
         initializer: InitializerApplicator = InitializerApplicator(),
-        dropout: float = 0.4,
+        dropout: float = 0.5,
+        feature_dropout: float = 0.3,
         proportion_loss_without_out_tag: float = 0.0,
     ):
         super().__init__(vocab)
@@ -60,6 +61,7 @@ class Disrpt2021Baseline(Model):
         self.prev_sentence_encoder = prev_sentence_encoder
         self.next_sentence_encoder = next_sentence_encoder
         self.dropout = torch.nn.Dropout(dropout)
+        self.feature_dropout = torch.nn.Dropout(feature_dropout)
 
         hidden_size = encoder.get_output_dim()
 
@@ -110,7 +112,7 @@ class Disrpt2021Baseline(Model):
         time_distributed_context = context.unsqueeze(1).expand(-1, encoded_sentence.shape[1], -1)
         # Get our handcrafted features
         combined_feature_tensor = torch.cat([kwargs[key].unsqueeze(-1) for key in FEATURES.keys()], dim=2)
-        combined_feature_tensor = self.dropout(combined_feature_tensor)
+        combined_feature_tensor = self.feature_dropout(combined_feature_tensor)
 
         # We now have (batch_size, num_tokens, h_0 + h_1 + h_2 + NUM_FEATS)
         encoder_input = torch.cat((encoded_sentence, time_distributed_context, combined_feature_tensor), dim=2)

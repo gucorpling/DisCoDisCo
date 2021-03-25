@@ -66,6 +66,7 @@ local context_encoder = {
             "layer_dropout_probability": 0.1,
         },
         "dropout": 0.5,
+        "feature_dropout": 0.3,
         "proportion_loss_without_out_tag": 0.0
     },
     "train_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_train.conll",

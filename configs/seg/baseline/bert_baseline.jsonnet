@@ -1,4 +1,4 @@
-local transformer_model_name = 'bert-base-cased';
+local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local embedding_dim = 768 + 40 * 2;
 local context_hidden_size = 200;
 local sentence_encoder_dim = embedding_dim;
@@ -65,6 +65,7 @@ local context_encoder = {
             "layer_dropout_probability": 0.1,
         },
         "dropout": 0.5,
+        "feature_dropout": 0.3,
         "proportion_loss_without_out_tag": 0.0
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
@@ -74,7 +75,10 @@ local context_encoder = {
         "shuffle": true
     },
     "trainer": {
-        "optimizer": "adam",
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.0005
+        },
         "patience": 4,
         "num_epochs": 30
     }
