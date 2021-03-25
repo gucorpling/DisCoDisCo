@@ -18,9 +18,7 @@ FEATURES: Dict[str, Dict[str, Any]] = {
     "dep_heads": {"source_key": "head", "deserialize": lambda val: int(val) - 1},
     "dep_rels": {"source_key": "deprel", "label_namespace": "deprel_tags"},
     # distance (in tokens) to the head
-    "head_distances": {
-        "source_key": "head_dist",
-    },
+    "head_distances": {"source_key": "head_dist"},
     # length of each token in chars
     "token_lengths": {"source_key": "tok_len"},
     # morphological features (NOTE: might need some breaking up)

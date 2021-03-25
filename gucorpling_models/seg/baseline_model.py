@@ -20,6 +20,10 @@ from gucorpling_models.seg.util import detect_encoding
 from gucorpling_models.seg.features import FEATURES
 
 
+def get_handcrafted_feature_tensor(kwargs):
+    return torch.cat([kwargs[key].unsqueeze(-1) for key in FEATURES.keys()], dim=2)
+
+
 @Model.register("disrpt_2021_seg_baseline")
 class Disrpt2021Baseline(Model):
     """
@@ -81,6 +85,22 @@ class Disrpt2021Baseline(Model):
         initializer(self)
         print(self)
 
+    def _get_encoded_context(self, prev_sentence, next_sentence, num_tokens):
+        """
+        Represent neighboring sentences using seq2vec encoders. The shape of the vec is
+        (batch_size, context_encoder_hidden_dim * 2), but we expand this to
+        (batch_size, num_toks, context_encoder_hidden_dim * 2) in order to make it easy to combine with the sequence
+        """
+        embedded_prev_sentence = self.embedder(prev_sentence)
+        embedded_next_sentence = self.embedder(next_sentence)
+        encoded_prev_sentence = self.prev_sentence_encoder(embedded_prev_sentence, get_text_field_mask(prev_sentence))
+        encoded_next_sentence = self.next_sentence_encoder(embedded_next_sentence, get_text_field_mask(next_sentence))
+        context = torch.cat((encoded_prev_sentence, encoded_next_sentence), 1)
+        # Context is of shape (batch_size, h_1 + h_2).
+        # This turns it into (batch_size, num_tokens, h_1 + h_2)
+        time_distributed_context = context.unsqueeze(1).expand(-1, num_tokens, -1)
+        return time_distributed_context
+
     def forward(  # type: ignore
         self,
         sentence: TextFieldTensors,
@@ -94,34 +114,21 @@ class Disrpt2021Baseline(Model):
         mask = get_text_field_mask(sentence)
 
         # Encoding --------------------------------------------------
-        # Encode the neighboring sentences. Shape: (batch_size, encoder_output_dim)
-        embedded_prev_sentence = self.embedder(prev_sentence)
-        embedded_next_sentence = self.embedder(next_sentence)
-        encoded_prev_sentence = self.prev_sentence_encoder(embedded_prev_sentence, get_text_field_mask(prev_sentence))
-        encoded_next_sentence = self.next_sentence_encoder(embedded_next_sentence, get_text_field_mask(next_sentence))
-        context = torch.cat((encoded_prev_sentence, encoded_next_sentence), 1)
-
-        # Embed the sentence text. Shape: (batch_size, num_tokens, embedding_dim)
         embedded_sentence = self.embedder(sentence)
-        # Get our handcrafted features
-        # Combine sentence embeddings with syntax, then encode into (batch_size, num_tokens, h_0)
         encoded_sentence = self.sentence_encoder(embedded_sentence, mask)
 
-        # Context is of shape (batch_size, h_1 + h_2).
-        # This turns it into (batch_size, num_tokens, h_1 + h_2)
-        time_distributed_context = context.unsqueeze(1).expand(-1, encoded_sentence.shape[1], -1)
-        # Get our handcrafted features
-        combined_feature_tensor = torch.cat([kwargs[key].unsqueeze(-1) for key in FEATURES.keys()], dim=2)
+        # Get our handcrafted features as well as our context from neighboring sentences, and put it all together
+        # into the input for the final encoder
+        combined_feature_tensor = get_handcrafted_feature_tensor(kwargs)
         combined_feature_tensor = self.feature_dropout(combined_feature_tensor)
-
-        # We now have (batch_size, num_tokens, h_0 + h_1 + h_2 + NUM_FEATS)
-        encoder_input = torch.cat((encoded_sentence, time_distributed_context, combined_feature_tensor), dim=2)
-        # Encode the sentence into (batch_size, num_tokens, h_0)
+        context = self._get_encoded_context(prev_sentence, next_sentence, embedded_sentence.shape[1])
+        encoder_input = torch.cat((encoded_sentence, context, combined_feature_tensor), dim=2)
 
         encoded_sequence = self.encoder(encoder_input, mask)
         encoded_sequence = self.dropout(encoded_sequence)
 
         # Decoding --------------------------------------------------
+        # project into the label space and use viterbi decoding on the CRF
         label_logits = self.label_projection_layer(encoded_sequence)
         pred_labels = [
             best_label_seq for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
@@ -133,36 +140,36 @@ class Disrpt2021Baseline(Model):
             "pred_labels": pred_labels,
         }
         if labels is not None:
-            output["gold_labels"] = labels
-
-            # Add negative log-likelihood as loss
-            if self.proportion_loss_without_out_tag:
-                o_tag_index = self._encoding_map["O"]
-                no_o_mask = mask & (labels != o_tag_index)
-                no_o_log_likelihood = self.crf(label_logits, labels, no_o_mask)
-                log_likelihood = self.crf(label_logits, labels, mask)
-
-                output["loss"] = -(
-                    self.proportion_loss_without_out_tag * no_o_log_likelihood
-                    + (1 - self.proportion_loss_without_out_tag) * log_likelihood
-                )
-            else:
-                log_likelihood = self.crf(label_logits, labels, mask)
-                output["loss"] = -log_likelihood
-            # output["loss"] = sequence_cross_entropy_with_logits(
-            #    label_logits, labels, crf_mask, gamma=2, label_smoothing=0.01
-            # )
-
-            # Represent viterbi labels as "class probabilities" that we can feed into the metrics
-            class_probabilities = label_logits * 0.0
-            for i, instance_labels in enumerate(pred_labels):
-                for j, label_id in enumerate(instance_labels):
-                    class_probabilities[i, j, label_id] = 1
-
-            for metric in self.metrics.values():
-                metric(class_probabilities, labels, mask)
+            self._compute_loss_and_metrics(label_logits, pred_labels, labels, mask, output)
 
         return output
+
+    def _compute_loss_and_metrics(self, label_logits, pred_labels, labels, mask, output):
+        output["gold_labels"] = labels
+
+        # Add negative log-likelihood as loss
+        if self.proportion_loss_without_out_tag:
+            o_tag_index = self._encoding_map["O"]
+            no_o_mask = mask & (labels != o_tag_index)
+            no_o_log_likelihood = self.crf(label_logits, labels, no_o_mask)
+            log_likelihood = self.crf(label_logits, labels, mask)
+
+            output["loss"] = -(
+                self.proportion_loss_without_out_tag * no_o_log_likelihood
+                + (1 - self.proportion_loss_without_out_tag) * log_likelihood
+            )
+        else:
+            log_likelihood = self.crf(label_logits, labels, mask)
+            output["loss"] = -log_likelihood
+
+        # Represent viterbi labels as "class probabilities" that we can feed into the metrics
+        class_probabilities = label_logits * 0.0
+        for i, instance_labels in enumerate(pred_labels):
+            for j, label_id in enumerate(instance_labels):
+                class_probabilities[i, j, label_id] = 1
+
+        for metric in self.metrics.values():
+            metric(class_probabilities, labels, mask)
 
     # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
     # Note that the output dict, because it's just from forward(), represents a batch, not a single
