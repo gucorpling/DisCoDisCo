@@ -59,9 +59,9 @@ class Disrpt2021SegReader(DatasetReader):
         self.document_boundary_token = document_boundary_token
 
     def apply_token_indexers(self, instance: Instance) -> None:
-        instance.fields["sentence"].token_indexers = self.token_indexers
-        instance.fields["prev_sentence"].token_indexers = self.token_indexers
-        instance.fields["next_sentence"].token_indexers = self.token_indexers
+        instance.fields["sentence"].token_indexers = self.token_indexers  # type: ignore
+        instance.fields["prev_sentence"].token_indexers = self.token_indexers  # type: ignore
+        instance.fields["next_sentence"].token_indexers = self.token_indexers  # type: ignore
 
     def text_to_instance(  # type: ignore
         self,
