@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any
+from typing import Dict, Any
 
 import torch
 import torch.nn.functional as F
@@ -9,9 +9,7 @@ from allennlp.modules import (
     Seq2VecEncoder,
     Seq2SeqEncoder,
     TimeDistributed,
-    FeedForward,
     ConditionalRandomField,
-    LayerNorm,
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn import util, Activation, InitializerApplicator
@@ -19,6 +17,7 @@ from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_lo
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure, SpanBasedF1Measure
 
 from gucorpling_models.seg.util import detect_encoding
+from gucorpling_models.seg.features import FEATURES
 
 
 @Model.register("disrpt_2021_seg_baseline")
@@ -41,6 +40,7 @@ class Disrpt2021Baseline(Model):
         next_sentence_encoder: Seq2VecEncoder,
         initializer: InitializerApplicator = InitializerApplicator(),
         dropout: float = 0.4,
+        proportion_loss_without_out_tag: float = 0.0,
     ):
         super().__init__(vocab)
         print(vocab)
@@ -50,6 +50,8 @@ class Disrpt2021Baseline(Model):
                 print(" ", v)
         self.labels = self.vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(self.labels)
+        assert 0.0 <= proportion_loss_without_out_tag <= 1.0, "Proportion must be between 0 and 1"
+        self.proportion_loss_without_out_tag = proportion_loss_without_out_tag
 
         # encoding --------------------------------------------------
         self.embedder = embedder
@@ -82,16 +84,9 @@ class Disrpt2021Baseline(Model):
         sentence: TextFieldTensors,
         prev_sentence: TextFieldTensors,
         next_sentence: TextFieldTensors,
-        pos_tags: torch.LongTensor,
-        cpos_tags: torch.LongTensor,
-        dep_heads: torch.LongTensor,
-        dep_rels: torch.LongTensor,
-        head_dists: torch.Tensor,
-        lemmas: torch.LongTensor,
-        morphs: torch.LongTensor,
-        s_type: torch.LongTensor,
-        sent_doc_percentile: torch.Tensor,
         labels: torch.LongTensor = None,
+        *args,
+        **kwargs,
     ) -> Dict[str, torch.Tensor]:
         mask = get_text_field_mask(sentence)
 
@@ -105,29 +100,19 @@ class Disrpt2021Baseline(Model):
 
         # Embed the sentence text. Shape: (batch_size, num_tokens, embedding_dim)
         embedded_sentence = self.embedder(sentence)
+        # Get our handcrafted features
         # Combine sentence embeddings with syntax, then encode into (batch_size, num_tokens, h_0)
-        enriched_embedded_sentence = torch.cat(
-            (
-                embedded_sentence,
-                pos_tags.unsqueeze(-1),
-                cpos_tags.unsqueeze(-1),
-                dep_heads.unsqueeze(-1),
-                dep_rels.unsqueeze(-1),
-                head_dists.unsqueeze(-1),
-                lemmas.unsqueeze(-1),
-                morphs.unsqueeze(-1),
-                s_type.unsqueeze(-1),
-                sent_doc_percentile.unsqueeze(-1),
-            ),
-            dim=2,
-        )
-        encoded_sentence = self.sentence_encoder(enriched_embedded_sentence, mask)
+        encoded_sentence = self.sentence_encoder(embedded_sentence, mask)
 
         # Context is of shape (batch_size, h_1 + h_2).
         # This turns it into (batch_size, num_tokens, h_1 + h_2)
         time_distributed_context = context.unsqueeze(1).expand(-1, encoded_sentence.shape[1], -1)
-        # We now have (batch_size, num_tokens, h_0 + h_1 + h_2)
-        encoder_input = torch.cat((encoded_sentence, time_distributed_context), dim=2)
+        # Get our handcrafted features
+        combined_feature_tensor = torch.cat([kwargs[key].unsqueeze(-1) for key in FEATURES.keys()], dim=2)
+        combined_feature_tensor = F.dropout(combined_feature_tensor, p=0.3, training=self.training)
+
+        # We now have (batch_size, num_tokens, h_0 + h_1 + h_2 + NUM_FEATS)
+        encoder_input = torch.cat((encoded_sentence, time_distributed_context, combined_feature_tensor), dim=2)
         # Encode the sentence into (batch_size, num_tokens, h_0)
 
         encoded_sequence = self.encoder(encoder_input, mask)
@@ -152,9 +137,19 @@ class Disrpt2021Baseline(Model):
             output["gold_labels"] = labels
 
             # Add negative log-likelihood as loss
-            crf_mask = mask
-            log_likelihood = self.crf(label_logits, labels, crf_mask)
-            output["loss"] = -log_likelihood
+            if self.proportion_loss_without_out_tag:
+                o_tag_index = self._encoding_map["O"]
+                no_o_mask = mask & (labels != o_tag_index)
+                no_o_log_likelihood = self.crf(label_logits, labels, no_o_mask)
+                log_likelihood = self.crf(label_logits, labels, mask)
+
+                output["loss"] = -(
+                    self.proportion_loss_without_out_tag * no_o_log_likelihood
+                    + (1 - self.proportion_loss_without_out_tag) * log_likelihood
+                )
+            else:
+                log_likelihood = self.crf(label_logits, labels, mask)
+                output["loss"] = -log_likelihood
             # output["loss"] = sequence_cross_entropy_with_logits(
             #    label_logits, labels, crf_mask, gamma=2, label_smoothing=0.01
             # )
@@ -163,8 +158,7 @@ class Disrpt2021Baseline(Model):
             class_probabilities = label_logits * 0.0
             for i, instance_labels in enumerate(pred_labels):
                 for j, label_id in enumerate(instance_labels):
-                    if crf_mask[i, j]:
-                        class_probabilities[i, j, label_id] = 1
+                    class_probabilities[i, j, label_id] = 1
 
             for metric in self.metrics.values():
                 metric(class_probabilities, labels, mask)

@@ -1,8 +1,10 @@
 local transformer_model_name = 'distilbert-base-multilingual-cased';
 local embedding_dim = 768 + 40 * 2;
 local context_hidden_size = 200;
-local sentence_encoder_dim = embedding_dim + 9;
-local encoder_input_dim = sentence_encoder_dim * 2 + context_hidden_size * 4;
+local sentence_encoder_dim = embedding_dim;
+local feature_count = 11;
+// sentence_encoder is a bilstm, so multiply by 2. context is gotten with a bilstm on both sides, so multilply by 4
+local encoder_input_dim = sentence_encoder_dim * 2 + context_hidden_size * 4 + feature_count;
 local target_corpus = "zho.rst.sctb";
 
 local context_encoder = {
@@ -52,18 +54,19 @@ local context_encoder = {
             "input_size": sentence_encoder_dim,
             "hidden_size": sentence_encoder_dim,
             "recurrent_dropout_probability": 0.3,
-            "layer_dropout_probability": 0.3,
+            "layer_dropout_probability": 0.1,
         },
         // seq2seq encoder for the final output to the decoder
         "encoder": {
             "type": "stacked_bidirectional_lstm",
             "num_layers": 1,
             "input_size": encoder_input_dim,
-            "hidden_size": 512,
+            "hidden_size": 768,
             "recurrent_dropout_probability": 0.3,
-            "layer_dropout_probability": 0.3,
+            "layer_dropout_probability": 0.1,
         },
-        "dropout": 0.5
+        "dropout": 0.5,
+        "proportion_loss_without_out_tag": 0.0
     },
     "train_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_train.conll",
     "validation_data_path": "sharedtask2019/data/" + target_corpus + "/" + target_corpus + "_dev.conll",
