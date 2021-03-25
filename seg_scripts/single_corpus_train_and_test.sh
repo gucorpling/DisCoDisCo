@@ -6,10 +6,16 @@ if [ $# -eq 0 ]; then
 fi
 CORPUS="$1"
 CORPUS_DIR="sharedtask2019/data/${1}"
+MODEL_DIR=models/${CORPUS}_seg_bert_baseline
 if [[ ! -d $CORPUS_DIR ]]; then
 	echo "Corpus \"$CORPUS_DIR\" not found"
 	exit 1
 fi
+if [[ -d $MODEL_DIR ]]; then
+	echo "\"$MODEL_DIR\" already exists. Please remove it."
+	exit 1
+fi
+
 
 # use language-specific berts if we can
 if [[ "$CORPUS" == "eng"* ]]; then 
@@ -20,7 +26,6 @@ else
 	export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
 fi
 
-MODEL_DIR=models/${CORPUS}_seg_bert_baseline
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "#### Training on $CORPUS"
