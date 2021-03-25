@@ -1,15 +1,16 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
-local embedding_dim = 768 + 40 * 2;
-local context_hidden_size = 200;
+local embedding_dim = 768 + 80 * 2;
+local context_hidden_size = 800;
 local sentence_encoder_dim = embedding_dim;
 local feature_count = 11;
 // sentence_encoder is a bilstm, so multiply by 2. context is gotten with a bilstm on both sides, so multilply by 4
-local encoder_input_dim = sentence_encoder_dim * 2 + context_hidden_size * 4 + feature_count;
+local encoder_input_dim = sentence_encoder_dim * 2 + context_hidden_size + feature_count;
+local encoder_hidden_dim = 512;
 
 local context_encoder = {
     "type": "lstm",
     "input_size": embedding_dim,
-    "hidden_size": context_hidden_size,
+    "hidden_size": context_hidden_size / 4, // 4 <= 2 bilstms applied to 2 sentences
     "num_layers": 1,
     "bidirectional": true,
     "dropout": 0.2
@@ -55,17 +56,25 @@ local context_encoder = {
             "recurrent_dropout_probability": 0.3,
             "layer_dropout_probability": 0.1,
         },
-        // seq2seq encoder for the final output to the decoder
-        "encoder": {
+        "encoder1": {
             "type": "stacked_bidirectional_lstm",
             "num_layers": 1,
             "input_size": encoder_input_dim,
-            "hidden_size": 768,
+            "hidden_size": encoder_hidden_dim,
             "recurrent_dropout_probability": 0.3,
             "layer_dropout_probability": 0.1,
         },
+        "encoder2": {
+            "type": "pytorch_transformer",
+            "input_dim": encoder_hidden_dim * 2,
+            "num_layers": 1,
+            "feedforward_hidden_dim": encoder_hidden_dim,
+            "num_attention_heads": 8,
+            "positional_encoding": "sinusoidal",
+            "dropout_prob": 0.2
+        },
         "dropout": 0.5,
-        "feature_dropout": 0.3,
+        "feature_dropout": 0.5,
         "proportion_loss_without_out_tag": 0.0
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
@@ -77,9 +86,10 @@ local context_encoder = {
     "trainer": {
         "optimizer": {
             "type": "adam",
-            "lr": 0.0005
+            "lr": 5e-4
         },
-        "patience": 4,
-        "num_epochs": 30
+        "patience": 5,
+        "num_epochs": 30,
+        //"validation_metric": "+f1"
     }
 }

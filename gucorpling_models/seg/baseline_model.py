@@ -38,7 +38,8 @@ class Disrpt2021Baseline(Model):
         self,
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
-        encoder: Seq2SeqEncoder,
+        encoder1: Seq2SeqEncoder,
+        encoder2: Seq2SeqEncoder,
         sentence_encoder: Seq2SeqEncoder,
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
@@ -60,14 +61,15 @@ class Disrpt2021Baseline(Model):
 
         # encoding --------------------------------------------------
         self.embedder = embedder
-        self.encoder = encoder
+        self.encoder1 = encoder1
+        self.encoder2 = encoder2
         self.sentence_encoder = sentence_encoder
         self.prev_sentence_encoder = prev_sentence_encoder
         self.next_sentence_encoder = next_sentence_encoder
         self.dropout = torch.nn.Dropout(dropout)
         self.feature_dropout = torch.nn.Dropout(feature_dropout)
 
-        hidden_size = encoder.get_output_dim()
+        hidden_size = encoder2.get_output_dim()
 
         # decoding --------------------------------------------------
         self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
@@ -124,7 +126,8 @@ class Disrpt2021Baseline(Model):
         context = self._get_encoded_context(prev_sentence, next_sentence, embedded_sentence.shape[1])
         encoder_input = torch.cat((encoded_sentence, context, combined_feature_tensor), dim=2)
 
-        encoded_sequence = self.encoder(encoder_input, mask)
+        encoded_sequence = self.encoder1(encoder_input, mask)
+        encoded_sequence = self.encoder2(encoded_sequence, mask)
         encoded_sequence = self.dropout(encoded_sequence)
 
         # Decoding --------------------------------------------------
