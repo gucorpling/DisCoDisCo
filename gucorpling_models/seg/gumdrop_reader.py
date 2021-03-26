@@ -31,17 +31,7 @@ class DepFeatures:
 
         # [s_id, wid, line_id ,head, deprel, word]
         feats_tups = [
-            tuple(
-                [
-                    x["s_id"],
-                    x["wid"],
-                    x["line_id"],
-                    int(x["head"]),
-                    x["deprel"],
-                    x["word"],
-                ]
-            )
-            for x in train_feats
+            tuple([x["s_id"], x["wid"], x["line_id"], int(x["head"]), x["deprel"], x["word"]]) for x in train_feats
         ]
         num_s = sorted(list(set([x[0] for x in feats_tups])))
         feats_parents = defaultdict(list)

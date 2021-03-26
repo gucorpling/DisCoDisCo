@@ -77,7 +77,6 @@ class Disrpt2021SegReader(DatasetReader):
         if next_sentence is None:
             next_sentence = self.document_boundary_token
         sentence_tokens = self.tokenizer.tokenize(sentence)
-        original_sentence_length = len(sentence_tokens)
         prev_sentence_tokens = self.tokenizer.tokenize(prev_sentence)
         next_sentence_tokens = self.tokenizer.tokenize(next_sentence)
         # TODO: wordpiece tokenization ruins this, think about a solution
@@ -102,7 +101,7 @@ class Disrpt2021SegReader(DatasetReader):
             "sentence": sentence_field,
             "prev_sentence": TextField(prev_sentence_tokens),
             "next_sentence": TextField(next_sentence_tokens),
-            "original_sentence_length": MetadataField(original_sentence_length),
+            "sentence_tokens": MetadataField(sentence_tokens),
         }
 
         # read in handcrafted features

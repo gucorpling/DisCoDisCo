@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Dict, Any, List
 
 import torch
@@ -10,18 +11,17 @@ from allennlp.modules import (
     Seq2SeqEncoder,
     TimeDistributed,
     ConditionalRandomField,
+    LayerNorm,
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
-from allennlp.nn import util, Activation, InitializerApplicator
+from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
+from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
+from allennlp.nn import InitializerApplicator
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure, SpanBasedF1Measure
+from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
 from gucorpling_models.seg.util import detect_encoding
-from gucorpling_models.seg.features import FEATURES
-
-
-def get_handcrafted_feature_tensor(kwargs):
-    return torch.cat([kwargs[key].unsqueeze(-1) for key in FEATURES.keys()], dim=2)
+from gucorpling_models.seg.features import FEATURES, get_feature_modules
 
 
 @Model.register("disrpt_2021_seg_baseline")
@@ -38,9 +38,8 @@ class Disrpt2021Baseline(Model):
         self,
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
-        encoder1: Seq2SeqEncoder,
-        encoder2: Seq2SeqEncoder,
-        sentence_encoder: Seq2SeqEncoder,
+        encoder_hidden_dim: int,
+        encoder_recurrent_dropout: float,
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
         initializer: InitializerApplicator = InitializerApplicator(),
@@ -56,19 +55,25 @@ class Disrpt2021Baseline(Model):
         self.labels = self.vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(self.labels)
 
+        # modules for features
+        feature_modules, feature_dims = get_feature_modules(vocab)
+        self.feature_modules = feature_modules
+
         # encoding --------------------------------------------------
         self.embedder = embedder
-        self.encoder1 = encoder1
-        self.encoder2 = encoder2
-        self.sentence_encoder = sentence_encoder
+        encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
+        self.encoder = PytorchSeq2SeqWrapper(
+            StackedBidirectionalLstm(
+                encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
+            )
+        )
         self.prev_sentence_encoder = prev_sentence_encoder
         self.next_sentence_encoder = next_sentence_encoder
-        self.dropout = torch.nn.Dropout(dropout)
         self.feature_dropout = torch.nn.Dropout(feature_dropout)
-
-        hidden_size = encoder2.get_output_dim()
+        self.dropout = torch.nn.Dropout(dropout)
 
         # decoding --------------------------------------------------
+        hidden_size = self.encoder.get_output_dim()
         self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
 
         # encoding scheme
@@ -79,7 +84,10 @@ class Disrpt2021Baseline(Model):
 
         # util --------------------------------------------------
         # these are stateful objects that keep track of accuracy across an epoch
-        self.metrics = {"span_f1": SpanBasedF1Measure(vocab, tag_namespace="labels", label_encoding=label_encoding)}
+        self.metrics = {
+            "span_f1": SpanBasedF1Measure(vocab, tag_namespace="labels", label_encoding=label_encoding),
+            "accuracy": CategoricalAccuracy(),
+        }
 
         initializer(self)
         print(self)
@@ -100,12 +108,23 @@ class Disrpt2021Baseline(Model):
         time_distributed_context = context.unsqueeze(1).expand(-1, num_tokens, -1)
         return time_distributed_context
 
+    def _get_combined_feature_tensor(self, kwargs):
+        output_tensors = []
+        for module_key, module in self.feature_modules.items():
+            output_tensor = module(kwargs[module_key])
+            if len(output_tensor.shape) == 2:
+                output_tensor = output_tensor.unsqueeze(-1)
+            output_tensors.append(output_tensor)
+
+        combined_feature_tensor = torch.cat(output_tensors, dim=2)
+        return self.feature_dropout(combined_feature_tensor)
+
     def forward(  # type: ignore
         self,
         sentence: TextFieldTensors,
         prev_sentence: TextFieldTensors,
         next_sentence: TextFieldTensors,
-        original_sentence_length: List[int],
+        sentence_tokens: List[str],
         labels: torch.LongTensor = None,
         *args,
         **kwargs,
@@ -114,20 +133,17 @@ class Disrpt2021Baseline(Model):
 
         # Encoding --------------------------------------------------
         embedded_sentence = self.embedder(sentence)
-        encoded_sentence = self.sentence_encoder(embedded_sentence, mask)
 
         # Context from neighboring sentences
         context = self._get_encoded_context(prev_sentence, next_sentence, embedded_sentence.shape[1])
-        # handcrafted features
-        if len(FEATURES) > 0:
-            combined_feature_tensor = get_handcrafted_feature_tensor(kwargs)
-            combined_feature_tensor = self.feature_dropout(combined_feature_tensor)
-            encoder_input = torch.cat((encoded_sentence, context, combined_feature_tensor), dim=2)
-        else:
-            encoder_input = torch.cat((encoded_sentence, context), dim=2)
 
-        encoded_sequence = self.encoder1(encoder_input, mask)
-        encoded_sequence = self.encoder2(encoded_sequence, mask)
+        # Combine everything we'll be feeding to the encoder
+        encoder_inputs = [embedded_sentence, context]
+        if len(FEATURES) > 0:
+            encoder_inputs.append(self._get_combined_feature_tensor(kwargs))
+        encoder_input = torch.cat(encoder_inputs, dim=2)
+
+        encoded_sequence = self.encoder(encoder_input, mask)
         encoded_sequence = self.dropout(encoded_sequence)
 
         # Decoding --------------------------------------------------
@@ -138,6 +154,7 @@ class Disrpt2021Baseline(Model):
         ]
 
         output = {
+            "tokens": sentence_tokens,
             "label_logits": label_logits,
             "mask": mask,
             "pred_labels": pred_labels,
@@ -158,16 +175,17 @@ class Disrpt2021Baseline(Model):
 
         log_likelihood = self.crf(label_logits, labels, mask)
         output["loss"] = -log_likelihood
+        # output["loss"] = self._weighted_cross_entropy(label_logits, labels, mask)
 
         for metric in self.metrics.values():
             metric(class_probabilities, labels, mask)
 
     def _weighted_cross_entropy(self, logits, labels, mask):
-        non_o_mask = mask & (labels != self._encoding_map["O"])
-        o_mask = mask & (labels == self._encoding_map["O"])
-        weighted_mask = (non_o_mask * self.non_out_tag_weight * mask.float()) + (o_mask * mask.float())
+        # non_o_mask = mask & (labels != self._encoding_map["O"])
+        # o_mask = mask & (labels == self._encoding_map["O"])
+        # weighted_mask = (non_o_mask * self.non_out_tag_weight * mask.float()) + (o_mask * mask.float())
         # TODO: consider the alpha and gamma parameters here
-        return sequence_cross_entropy_with_logits(logits, labels, weighted_mask)
+        return sequence_cross_entropy_with_logits(logits, labels, mask, gamma=1.5, alpha=0.7)
 
     # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
     # Note that the output dict, because it's just from forward(), represents a batch, not a single
@@ -182,8 +200,11 @@ class Disrpt2021Baseline(Model):
         return output_dict
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        return {
-            k.replace("-overall", "").replace("-measure", ""): v
+        metrics = {"tag_accuracy": self.metrics["accuracy"].get_metric(reset)}
+        f1_metrics = {
+            "span_" + k.replace("-overall", "").replace("-measure", ""): v
             for k, v in self.metrics["span_f1"].get_metric(reset=reset).items()
             if "overall" in k
         }
+        metrics.update(f1_metrics)
+        return metrics  # type: ignore

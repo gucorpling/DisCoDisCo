@@ -1,8 +1,42 @@
-from typing import Any, List, Dict
+import math
+from typing import Any, List, Dict, Union, Tuple
+
+from allennlp.common.checks import ConfigurationError
+from allennlp.common.util import pad_sequence_to_length
+from overrides import overrides  # type: ignore
 
 import torch
-from allennlp.data import Field
-from allennlp.data.fields import TensorField, TextField, SequenceLabelField
+from allennlp.data import Field, Vocabulary
+from allennlp.data.fields import TensorField, TextField, SequenceLabelField, SequenceField, MultiLabelField
+
+
+# class SequenceOneHotLabelField(SequenceLabelField):
+#     """Like a SequenceLabelField, but with labels one-hot encoded"""
+#
+#     def __init__(
+#         self, labels: Union[List[str], List[int]], sequence_field: SequenceField, label_namespace: str = "labels",
+#     ) -> None:
+#         super().__init__(labels, sequence_field, label_namespace)
+#         self._num_labels = None
+#
+#     @overrides
+#     def as_tensor(self, padding_lengths: Dict[str, int]) -> torch.Tensor:
+#         if self._indexed_labels is None:
+#             raise ConfigurationError("You must call .index(vocabulary) on a field before calling .as_tensor()")
+#         desired_num_tokens = padding_lengths["num_tokens"]
+#         padded_tags = pad_sequence_to_length(self._indexed_labels, desired_num_tokens)
+#         tensor = torch.LongTensor([[1 if i == tag else 0 for i in range(self._num_labels)] for tag in padded_tags])
+#         return tensor
+#
+#     @overrides
+#     def index(self, vocab: Vocabulary):
+#         if not self._skip_indexing:
+#             self._indexed_labels = [
+#                 vocab.get_token_index(label, self._label_namespace) for label in self.labels  # type: ignore
+#             ]
+#         if not self._num_labels:
+#             self._num_labels = vocab.get_vocab_size(self._label_namespace)
+
 
 # Each item should have keys:
 # - source_key: key from the token dict returned by the gumdrop code to get the feature data
@@ -32,6 +66,27 @@ FEATURES: Dict[str, Dict[str, Any]] = {
     # whether the token is a bracket TODO: verify
     "token_is_bracket": {"source_key": "bracket"},
 }
+
+
+def get_feature_modules(vocab: Vocabulary) -> Tuple[torch.nn.ModuleDict, int]:
+    modules: Dict[str, torch.nn.Module] = {}
+    total_dims = 0
+    for key, config in FEATURES.items():
+        ns = config.get("label_namespace", None)
+        if ns is None:
+            modules[key] = torch.nn.Identity()
+            total_dims += 1
+        else:
+            size = vocab.get_vocab_size(ns)
+            # if size <= 5:
+            #    modules[key] = torch.nn.Identity()
+            #    total_dims += size
+            # else:
+            edims = math.ceil(math.sqrt(size))
+            total_dims += edims
+            modules[key] = torch.nn.Embedding(size, edims, padding_idx=(0 if vocab.is_padded(ns) else None))
+
+    return torch.nn.ModuleDict(modules), total_dims
 
 
 def get_field(key, data: List[Any], sentence: TextField) -> Field:

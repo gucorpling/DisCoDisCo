@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o errexit
 if [ $# -eq 0 ]; then
 	echo "Supply the name of a corpus"
 	exit 1
@@ -50,7 +51,6 @@ allennlp predict \
 	--use-dataset-reader \
 	--cuda-device 0 \
 	--output-file "$JSON_PRED_PATH"
-set -o errexit
 echo "Removing model files..."
 rm $MODEL_DIR/*.th
 echo ""
