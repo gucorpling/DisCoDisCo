@@ -74,8 +74,7 @@ local context_encoder = {
             "dropout_prob": 0.2
         },
         "dropout": 0.5,
-        "feature_dropout": 0.5,
-        "proportion_loss_without_out_tag": 0.0
+        "feature_dropout": 0.5
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),

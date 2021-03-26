@@ -46,7 +46,6 @@ class Disrpt2021Baseline(Model):
         initializer: InitializerApplicator = InitializerApplicator(),
         dropout: float = 0.5,
         feature_dropout: float = 0.3,
-        proportion_loss_without_out_tag: float = 0.0,
     ):
         super().__init__(vocab)
         print(vocab)
@@ -56,8 +55,6 @@ class Disrpt2021Baseline(Model):
                 print(" ", v)
         self.labels = self.vocab.get_index_to_token_vocabulary("labels")
         num_labels = len(self.labels)
-        assert 0.0 <= proportion_loss_without_out_tag <= 1.0, "Proportion must be between 0 and 1"
-        self.proportion_loss_without_out_tag = proportion_loss_without_out_tag
 
         # encoding --------------------------------------------------
         self.embedder = embedder
@@ -119,12 +116,15 @@ class Disrpt2021Baseline(Model):
         embedded_sentence = self.embedder(sentence)
         encoded_sentence = self.sentence_encoder(embedded_sentence, mask)
 
-        # Get our handcrafted features as well as our context from neighboring sentences, and put it all together
-        # into the input for the final encoder
-        combined_feature_tensor = get_handcrafted_feature_tensor(kwargs)
-        combined_feature_tensor = self.feature_dropout(combined_feature_tensor)
+        # Context from neighboring sentences
         context = self._get_encoded_context(prev_sentence, next_sentence, embedded_sentence.shape[1])
-        encoder_input = torch.cat((encoded_sentence, context, combined_feature_tensor), dim=2)
+        # handcrafted features
+        if len(FEATURES) > 0:
+            combined_feature_tensor = get_handcrafted_feature_tensor(kwargs)
+            combined_feature_tensor = self.feature_dropout(combined_feature_tensor)
+            encoder_input = torch.cat((encoded_sentence, context, combined_feature_tensor), dim=2)
+        else:
+            encoder_input = torch.cat((encoded_sentence, context), dim=2)
 
         encoded_sequence = self.encoder1(encoder_input, mask)
         encoded_sequence = self.encoder2(encoded_sequence, mask)
@@ -150,29 +150,24 @@ class Disrpt2021Baseline(Model):
     def _compute_loss_and_metrics(self, label_logits, pred_labels, labels, mask, output):
         output["gold_labels"] = labels
 
-        # Add negative log-likelihood as loss
-        if self.proportion_loss_without_out_tag:
-            o_tag_index = self._encoding_map["O"]
-            no_o_mask = mask & (labels != o_tag_index)
-            no_o_log_likelihood = self.crf(label_logits, labels, no_o_mask)
-            log_likelihood = self.crf(label_logits, labels, mask)
-
-            output["loss"] = -(
-                self.proportion_loss_without_out_tag * no_o_log_likelihood
-                + (1 - self.proportion_loss_without_out_tag) * log_likelihood
-            )
-        else:
-            log_likelihood = self.crf(label_logits, labels, mask)
-            output["loss"] = -log_likelihood
-
         # Represent viterbi labels as "class probabilities" that we can feed into the metrics
         class_probabilities = label_logits * 0.0
         for i, instance_labels in enumerate(pred_labels):
             for j, label_id in enumerate(instance_labels):
                 class_probabilities[i, j, label_id] = 1
 
+        log_likelihood = self.crf(label_logits, labels, mask)
+        output["loss"] = -log_likelihood
+
         for metric in self.metrics.values():
             metric(class_probabilities, labels, mask)
+
+    def _weighted_cross_entropy(self, logits, labels, mask):
+        non_o_mask = mask & (labels != self._encoding_map["O"])
+        o_mask = mask & (labels == self._encoding_map["O"])
+        weighted_mask = (non_o_mask * self.non_out_tag_weight * mask.float()) + (o_mask * mask.float())
+        # TODO: consider the alpha and gamma parameters here
+        return sequence_cross_entropy_with_logits(logits, labels, weighted_mask)
 
     # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
     # Note that the output dict, because it's just from forward(), represents a batch, not a single
