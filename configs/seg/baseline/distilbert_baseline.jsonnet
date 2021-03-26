@@ -35,7 +35,7 @@ local context_encoder = {
                 "tokens": {
                     "type": "pretrained_transformer_mismatched",
                     "model_name": transformer_model_name,
-                    "train_parameters": true,
+                    "train_parameters": false,
                     //"last_layer_only": false
                 },
                 "token_characters": import "../components/char_embedder.libsonnet"
