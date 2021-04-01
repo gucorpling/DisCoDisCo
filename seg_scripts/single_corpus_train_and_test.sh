@@ -90,3 +90,7 @@ TSV_PATH="all_scores.tsv"
 cat "$MODEL_DIR/score.txt" | cut -d " " -f2 | head -n 1 | tr "\n" "\t" >> "$TSV_PATH"
 cat "$MODEL_DIR/score.txt" | cut -d " " -f3 | tail -n 3 | tr "\n" "\t" | sed 's/\t$/\n/g' >> "$TSV_PATH"
 
+echo "Removing model dir..."
+if [[ $2 == "delete" ]]; then
+	rm -rf "$MODEL_DIR"
+fi
