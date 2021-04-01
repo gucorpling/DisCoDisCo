@@ -13,7 +13,7 @@ if [[ ! -d $CORPUS_DIR ]]; then
 fi
 if [[ -d $MODEL_DIR ]]; then
 	echo "\"$MODEL_DIR\" already exists. Please remove it."
-#	exit 1
+	exit 1
 fi
 
 
@@ -57,9 +57,9 @@ echo ""
 export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
 echo $TRAIN_DATA_PATH
-#allennlp train \
-#	configs/seg/baseline/bert_baseline.jsonnet \
-#	-s "$MODEL_DIR"
+allennlp train \
+	configs/seg/baseline/bert_baseline.jsonnet \
+	-s "$MODEL_DIR"
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Testing on ${CORPUS}"
