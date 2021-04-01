@@ -5,7 +5,7 @@ if [ $# -eq 0 ]; then
 	exit 1
 fi
 CORPUS="$1"
-CORPUS_DIR="sharedtask2019/data/${1}"
+CORPUS_DIR="data/2019/${1}"
 MODEL_DIR=models/${CORPUS}_seg_bert_baseline
 if [[ ! -d $CORPUS_DIR ]]; then
 	echo "Corpus \"$CORPUS_DIR\" not found"
@@ -37,23 +37,23 @@ fi
 
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-echo "#### Training on $CORPUS"
+echo "# Training on $CORPUS"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
-export TRAIN_DATA_PATH="sharedtask2019/data/${CORPUS}/${CORPUS}_train.conll"
-export VALIDATION_DATA_PATH="sharedtask2019/data/${CORPUS}/${CORPUS}_dev.conll"
+export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
+export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
 echo $TRAIN_DATA_PATH
 allennlp train \
 	configs/seg/baseline/bert_baseline.jsonnet \
 	-s "$MODEL_DIR"
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-echo "#### Testing on ${CORPUS}"
+echo "# Testing on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
 JSON_PRED_PATH="${MODEL_DIR}/output_test.jsonl"
 CONLL_PRED_PATH="${MODEL_DIR}/output_test.conll"
-CONLL_GOLD_PATH="sharedtask2019/data/${CORPUS}/${CORPUS}_test.conll"
+CONLL_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_test.conll"
 allennlp predict \
 	"${MODEL_DIR}/model.tar.gz" \
 	"$CONLL_GOLD_PATH" \
@@ -64,7 +64,7 @@ echo "Removing model files..."
 rm $MODEL_DIR/*.th
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-echo "#### Scoring on ${CORPUS}"
+echo "# Scoring on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
 python seg_scripts/format_output.py "$JSON_PRED_PATH" "$CONLL_PRED_PATH"
