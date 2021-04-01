@@ -55,7 +55,7 @@ local context_encoder = {
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
     "data_loader": {
-        "batch_size": 32,
+        "batch_size": 16,
         "shuffle": true
     },
     "trainer": {
