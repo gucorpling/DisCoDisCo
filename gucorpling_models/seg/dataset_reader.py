@@ -160,7 +160,11 @@ class Disrpt2021SegReader(DatasetReader):
         for i, token_dicts in enumerate(token_dicts_by_sentence):
             prev_sentence = " ".join(sentence_tokens[i - 1]) if i > 0 else self.document_boundary_token
             sentence = " ".join(sentence_tokens[i])
-            next_sentence = " ".join(sentence_tokens[i + 1]) if i < len(token_dicts_by_sentence) - 1 else self.document_boundary_token
+            next_sentence = (
+                " ".join(sentence_tokens[i + 1])
+                if i < len(token_dicts_by_sentence) - 1
+                else self.document_boundary_token
+            )
             labels = [LABEL_TO_ENCODING[td["label"]] for td in token_dicts]
             yield self.text_to_instance(
                 sentence=sentence,
