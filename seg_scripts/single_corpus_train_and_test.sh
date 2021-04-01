@@ -6,7 +6,7 @@ if [ $# -eq 0 ]; then
 fi
 CORPUS="$1"
 CORPUS_DIR="data/2019/${1}"
-MODEL_DIR=models/${CORPUS}_seg_bert_baseline
+MODEL_DIR=${2:-models}/${CORPUS}_seg_bert_baseline
 if [[ ! -d $CORPUS_DIR ]]; then
 	echo "Corpus \"$CORPUS_DIR\" not found"
 	exit 1
@@ -89,8 +89,3 @@ printf "#!/bin/sh\npython seg_scripts/seg_eval_2019_modified.py $CONLL_GOLD_PATH
 TSV_PATH="all_scores.tsv"
 cat "$MODEL_DIR/score.txt" | cut -d " " -f2 | head -n 1 | tr "\n" "\t" >> "$TSV_PATH"
 cat "$MODEL_DIR/score.txt" | cut -d " " -f3 | tail -n 3 | tr "\n" "\t" | sed 's/\t$/\n/g' >> "$TSV_PATH"
-
-echo "Removing model dir..."
-if [[ $2 == "delete" ]]; then
-	rm -rf "$MODEL_DIR"
-fi
