@@ -18,12 +18,21 @@ fi
 
 
 # use language-specific berts if we can
+export EMBEDDING_DIMS=768
 if [[ "$CORPUS" == "eng"* ]]; then 
-	export EMBEDDING_MODEL_NAME="bert-base-cased"
+	#export EMBEDDING_MODEL_NAME="roberta-base"
+	export EMBEDDING_MODEL_NAME="bert-large-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
-	export EMBEDDING_MODEL_NAME="bert-base-chinese"
+	export EMBEDDING_MODEL_NAME="hfl/chinese-roberta-wwm-ext-large"
+	export EMBEDDING_DIMS=1024
+	#export EMBEDDING_MODEL_NAME="bert-base-chinese"
+elif [[ "$CORPUS" == "nld"* ]]; then
+	export EMBEDDING_MODEL_NAME="bert-base-dutch-cased"
+elif [[ "$CORPUS" == "eus"* ]]; then
+	export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
 else
-	export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
+	#export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
+	export EMBEDDING_MODEL_NAME="xlm-roberta-base"
 fi
 
 echo ""
