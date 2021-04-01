@@ -3,8 +3,10 @@
 
 import csv
 import os
+import sys
 from typing import Dict, Iterable, Any, List, Optional, Tuple
 from pprint import pprint
+import re
 
 import torch
 from allennlp.data import DatasetReader, Instance, Field
@@ -42,6 +44,26 @@ LABEL_TO_ENCODING = {
 }
 
 
+# Corpus-specific preprocessing, currently used only for russian
+def preprocess_text(file_path, tokens):
+    for i in range(len(tokens)):
+        token = tokens[i]
+        # see 94175 in rus.rst.rrt_train.conll
+        if "rus.rst.rrt" in file_path:
+            # Dates explode when they're wordpiece tokenized and some sentences have a lot--replace them with "Tuesday"
+            if re.match(r"\d\d.\d\d.\d\d\d\d", token):
+                tokens[i] = "вторник"
+            # So many weird backslashes for some reason
+            elif token.endswith("\\") and len(token) > 1:
+                tokens[i] = token[:-1]
+            elif token.endswith("\\."):
+                tokens[i] = token[:-2] + "."
+            # urls
+            elif token.startswith("http://") or token.startswith("https://") or token.startswith("www."):
+                tokens[i] = "веб-сайт"
+    return tokens
+
+
 @DatasetReader.register("disrpt_2021_seg")
 class Disrpt2021SegReader(DatasetReader):
     def __init__(
@@ -55,7 +77,7 @@ class Disrpt2021SegReader(DatasetReader):
         super().__init__(**kwargs)
         self.tokenizer = tokenizer or WhitespaceTokenizer()
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
-        self.max_tokens = max_tokens  # useful for BERT
+        self.max_tokens = max_tokens if max_tokens is not None else sys.maxsize  # useful for BERT
         self.document_boundary_token = document_boundary_token
 
     def apply_token_indexers(self, instance: Instance) -> None:
@@ -79,11 +101,6 @@ class Disrpt2021SegReader(DatasetReader):
         sentence_tokens = self.tokenizer.tokenize(sentence)
         prev_sentence_tokens = self.tokenizer.tokenize(prev_sentence)
         next_sentence_tokens = self.tokenizer.tokenize(next_sentence)
-        # TODO: wordpiece tokenization ruins this, think about a solution
-        if self.max_tokens:
-            sentence_tokens = sentence_tokens[: self.max_tokens]
-            prev_sentence_tokens = prev_sentence_tokens[: self.max_tokens]
-            next_sentence_tokens = next_sentence_tokens[: self.max_tokens]
 
         if len(sentence_tokens) != len(labels):
             raise ValueError(
@@ -124,7 +141,9 @@ class Disrpt2021SegReader(DatasetReader):
         # use gumdrop's function for reading the conll
         token_dicts, _, _, _, _ = read_conll_conn(conll_file_path)
         token_dicts_by_sentence = group_by_sentence(token_dicts)
-        sentence_strings = [" ".join(td["word"] for td in sentence) for sentence in token_dicts_by_sentence]
+        sentence_tokens = [
+            preprocess_text(file_path, [td["word"] for td in sentence]) for sentence in token_dicts_by_sentence
+        ]
 
         # read handcrafted features provided by gumdrop code
         features = [
@@ -139,9 +158,9 @@ class Disrpt2021SegReader(DatasetReader):
         ]
 
         for i, token_dicts in enumerate(token_dicts_by_sentence):
-            prev_sentence = sentence_strings[i - 1] if i > 0 else None
-            next_sentence = sentence_strings[i + 1] if i < len(token_dicts_by_sentence) - 1 else None
-            sentence = sentence_strings[i]
+            prev_sentence = " ".join(sentence_tokens[i - 1])
+            sentence = " ".join(sentence_tokens[i])
+            next_sentence = " ".join(sentence_tokens[i + 1])
             labels = [LABEL_TO_ENCODING[td["label"]] for td in token_dicts]
             yield self.text_to_instance(
                 sentence=sentence,
