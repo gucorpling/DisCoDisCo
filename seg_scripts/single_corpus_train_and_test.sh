@@ -84,3 +84,9 @@ echo ""
 python seg_scripts/format_output.py "$JSON_PRED_PATH" "$CONLL_PRED_PATH"
 python seg_scripts/seg_eval_2019_modified.py "$CONLL_GOLD_PATH" "$CONLL_PRED_PATH" | tee "$MODEL_DIR/score.txt"
 printf "#!/bin/sh\npython seg_scripts/seg_eval_2019_modified.py $CONLL_GOLD_PATH $CONLL_PRED_PATH\n" > "$MODEL_DIR/calc_score.sh"
+
+# Accumulate a record of scores
+TSV_PATH="all_scores.tsv"
+cat "$MODEL_DIR/score.txt" | cut -d " " -f2 | head -n 1 | tr "\n" "\t" >> "$TSV_PATH"
+cat "$MODEL_DIR/score.txt" | cut -d " " -f3 | tail -n 3 | tr "\n" "\t" | sed 's/\t$/\n/g' >> "$TSV_PATH"
+
