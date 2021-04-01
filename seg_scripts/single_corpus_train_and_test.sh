@@ -26,10 +26,22 @@ elif [[ "$CORPUS" == "zho"* ]]; then
 	export EMBEDDING_MODEL_NAME="hfl/chinese-roberta-wwm-ext-large"
 	export EMBEDDING_DIMS=1024
 	#export EMBEDDING_MODEL_NAME="bert-base-chinese"
+elif [[ "$CORPUS" == "deu"* ]]; then
+  export EMBEDDING_MODEL_NAME="bert-base-german-cased"
+elif [[ "$CORPUS" == "fra"* ]]; then
+  export EMBEDDING_MODEL_NAME="camembert-base"
 elif [[ "$CORPUS" == "nld"* ]]; then
 	export EMBEDDING_MODEL_NAME="bert-base-dutch-cased"
+elif [[ "$CORPUS" == "por"* ]]; then
+  export EMBEDDING_MODEL_NAME="neuralmind/bert-base-portuguese-cased"
+elif [[ "$CORPUS" == "rus"* ]]; then
+  export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
 elif [[ "$CORPUS" == "eus"* ]]; then
 	export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
+# elif [[ "$CORPUS" == "spa"* ]]; then
+# 	export EMBEDDING_MODEL_NAME="??"
+elif [[ "$CORPUS" == "tur"* ]]; then
+	export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 else
 	#export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
 	export EMBEDDING_MODEL_NAME="xlm-roberta-base"
