@@ -61,9 +61,9 @@ local context_encoder = {
     "trainer": {
         "optimizer": {
             "type": "adamw",
-            "lr": 1e-3
+            "lr": 5e-4
         },
-        "patience": 5,
+        "patience": 6,
         "num_epochs": 30,
         // probably best to just use loss
         //"validation_metric": "+span_f1"

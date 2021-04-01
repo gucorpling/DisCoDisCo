@@ -13,7 +13,7 @@ if [[ ! -d $CORPUS_DIR ]]; then
 fi
 if [[ -d $MODEL_DIR ]]; then
 	echo "\"$MODEL_DIR\" already exists. Please remove it."
-	exit 1
+#	exit 1
 fi
 
 
@@ -57,9 +57,9 @@ echo ""
 export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
 echo $TRAIN_DATA_PATH
-allennlp train \
-	configs/seg/baseline/bert_baseline.jsonnet \
-	-s "$MODEL_DIR"
+#allennlp train \
+#	configs/seg/baseline/bert_baseline.jsonnet \
+#	-s "$MODEL_DIR"
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Testing on ${CORPUS}"
@@ -82,5 +82,5 @@ echo "# Scoring on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
 python seg_scripts/format_output.py "$JSON_PRED_PATH" "$CONLL_PRED_PATH"
-python sharedtask2019/utils/seg_eval.py "$CONLL_GOLD_PATH" "$CONLL_PRED_PATH" | tee "$MODEL_DIR/score.txt"
-printf "#!/bin/sh\npython sharedtask2019/utils/seg_eval.py $CONLL_GOLD_PATH $CONLL_PRED_PATH\n" > "$MODEL_DIR/calc_score.sh"
+python seg_scripts/seg_eval_2019_modified.py "$CONLL_GOLD_PATH" "$CONLL_PRED_PATH" | tee "$MODEL_DIR/score.txt"
+printf "#!/bin/sh\npython seg_scripts/seg_eval_2019_modified.py $CONLL_GOLD_PATH $CONLL_PRED_PATH\n" > "$MODEL_DIR/calc_score.sh"
