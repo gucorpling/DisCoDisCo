@@ -55,7 +55,7 @@ local context_encoder = {
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
     "data_loader": {
-        "batch_size": 16,
+        "batch_size": 32,
         "shuffle": true
     },
     "trainer": {
@@ -63,7 +63,13 @@ local context_encoder = {
             "type": "adamw",
             "lr": 5e-4
         },
-        "patience": 6,
+        "learning_rate_scheduler": {
+            "type": "reduce_on_plateau",
+            "factor": 0.5,
+            "mode": "max",
+            "patience": 2
+        },
+        "patience": 7,
         "num_epochs": 30,
         // probably best to just use loss
         //"validation_metric": "+span_f1"
