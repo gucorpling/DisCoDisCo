@@ -11,7 +11,8 @@ from allennlp.modules import (
     Seq2SeqEncoder,
     TimeDistributed,
     ConditionalRandomField,
-    LayerNorm, FeedForward,
+    LayerNorm,
+    FeedForward,
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper, GatedCnnEncoder, FeedForwardEncoder, ComposeEncoder
@@ -19,7 +20,6 @@ from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
 from allennlp.nn import InitializerApplicator, Activation
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
-from allennlp_models.rc import QaNetEncoder
 
 from gucorpling_models.seg.util import detect_encoding
 from gucorpling_models.seg.features import FEATURES, get_feature_modules
@@ -59,13 +59,15 @@ class Disrpt2021Baseline(Model):
         self.embedder = embedder
         encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
 
-        self.feedforward = FeedForwardEncoder(FeedForward(encoder_input_dim, 3, 256, Activation.by_name('relu')(), dropout=0.1))
-        #self.encoder = PytorchSeq2SeqWrapper(
+        self.feedforward = FeedForwardEncoder(
+            FeedForward(encoder_input_dim, 3, 256, Activation.by_name("relu")(), dropout=0.1)
+        )
+        # self.encoder = PytorchSeq2SeqWrapper(
         #    StackedBidirectionalLstm(
         #        encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
         #    )
-        #)
-        #self.encoder = QaNetEncoder(encoder_input_dim, **{
+        # )
+        # self.encoder = QaNetEncoder(encoder_input_dim, **{
         #    "hidden_dim": 128,
         #    "attention_projection_dim": 128,
         #    "feedforward_hidden_dim": 128,
@@ -76,7 +78,7 @@ class Disrpt2021Baseline(Model):
         #    "dropout_prob": 0.1,
         #    "layer_dropout_undecayed_prob": 0.1,
         #    "attention_dropout_prob": 0
-        #})
+        # })
         layers = [
             [[2, 256, 1], [2, 256, 2], [2, 256, 4]],
             [[2, 256, 1], [2, 256, 2], [2, 256, 4]],
