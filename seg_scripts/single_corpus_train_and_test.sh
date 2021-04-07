@@ -16,39 +16,46 @@ if [[ -d $MODEL_DIR ]]; then
 	exit 1
 fi
 
-
 # use language-specific berts if we can
 export EMBEDDING_DIMS=768
 if [[ "$CORPUS" == "eng"* ]]; then 
-	export EMBEDDING_MODEL_NAME="roberta-base"
-	#export EMBEDDING_MODEL_NAME="bert-large-cased"
-	#export EMBEDDING_DIMS=1024
+	export EMBEDDING_DIMS=1024
+	export EMBEDDING_MODEL_NAME="roberta-large"
 elif [[ "$CORPUS" == "zho"* ]]; then
 	export EMBEDDING_MODEL_NAME="bert-base-chinese"
-	#export EMBEDDING_MODEL_NAME="hfl/chinese-roberta-wwm-ext-large"
-	#export EMBEDDING_DIMS=1024
-#elif [[ "$CORPUS" == "deu"* ]]; then
-#  export EMBEDDING_MODEL_NAME="bert-base-german-cased"
-#elif [[ "$CORPUS" == "fra"* ]]; then
-#  export EMBEDDING_MODEL_NAME="camembert-base"
-#elif [[ "$CORPUS" == "nld"* ]]; then
-#	export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
-#elif [[ "$CORPUS" == "por"* ]]; then
-#  export EMBEDDING_MODEL_NAME="neuralmind/bert-base-portuguese-cased"
-#elif [[ "$CORPUS" == "rus"* ]]; then
-#  export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
-#	#export EMBEDDING_MODEL_NAME="xlm-roberta-base"
 elif [[ "$CORPUS" == "eus"* ]]; then
 	export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
-# elif [[ "$CORPUS" == "spa"* ]]; then
-# 	export EMBEDDING_MODEL_NAME="??"
 elif [[ "$CORPUS" == "tur"* ]]; then
-	#export EMBEDDING_MODEL_NAME="xlm-roberta-base"
 	export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 else
-	#export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
-	export EMBEDDING_MODEL_NAME="xlm-roberta-large"
 	export EMBEDDING_DIMS=1024
+	export EMBEDDING_MODEL_NAME="xlm-roberta-large"
+fi
+
+# use fastText embeddings
+if [[ "$CORPUS" == "eng"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.en.300.vec"
+elif [[ "$CORPUS" == "deu"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.de.300.vec"
+elif [[ "$CORPUS" == "eus"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.eu.300.vec"
+elif [[ "$CORPUS" == "fra"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fr.300.vec"
+elif [[ "$CORPUS" == "nld"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
+elif [[ "$CORPUS" == "por"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.pt.300.vec"
+elif [[ "$CORPUS" == "rus"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.ru.300.vec"
+elif [[ "$CORPUS" == "spa"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.es.300.vec"
+elif [[ "$CORPUS" == "tur"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
+elif [[ "$CORPUS" == "zho"* ]]; then
+	export FASTTEXT_EMBEDDING_FILE="embeddings/cc.zh.300.vec"
+else
+	echo "Couldn't find a fasttext embedding for \"$CORPUS\"" >&2
+	exit 1
 fi
 
 echo ""

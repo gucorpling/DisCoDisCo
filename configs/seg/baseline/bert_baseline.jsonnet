@@ -1,5 +1,5 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
-local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2;
+local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2 + 300;
 local context_hidden_size = 400;
 local encoder_hidden_dim = 256;
 
@@ -21,6 +21,10 @@ local context_encoder = {
                 "type": "pretrained_transformer_mismatched",
                 "model_name": transformer_model_name
             },
+            "fasttext": {
+                "type": "single_id",
+                "namespace": "fasttext",
+            },
             "token_characters": import "../components/char_indexer.libsonnet"
         },
         "tokenizer": {
@@ -37,6 +41,13 @@ local context_encoder = {
                     "train_parameters": false,
                     "last_layer_only": false
                 },
+                "fasttext": {
+                    "type": "embedding",
+                    "vocab_namespace": "fasttext",
+                    "embedding_dim": 300,
+                    "trainable": false,
+                    "pretrained_file": std.extVar("FASTTEXT_EMBEDDING_FILE")
+                },
                 "token_characters": import "../components/char_embedder.libsonnet"
             }
         },
@@ -47,7 +58,7 @@ local context_encoder = {
         // at the start of the program. so, it'll always be a bilstm, but you can use the two items
         // below to configure the most important hyperparameters it has
         "encoder_hidden_dim": encoder_hidden_dim,
-        "encoder_recurrent_dropout": 0.3,
+        "encoder_recurrent_dropout": 0.1,
         // end encoder hyperparams
         "dropout": 0.5,
         "feature_dropout": 0.4
@@ -70,7 +81,7 @@ local context_encoder = {
             "patience": 2
         },
         "patience": 7,
-        "num_epochs": 30,
+        "num_epochs": 60,
         // probably best to just use loss
         //"validation_metric": "+span_f1"
     }
