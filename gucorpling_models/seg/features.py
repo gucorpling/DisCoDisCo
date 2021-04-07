@@ -49,22 +49,22 @@ FEATURES: Dict[str, Dict[str, Any]] = {
     # PTB pos tags
     "cpos_tags": {"source_key": "cpos", "label_namespace": "xpos"},
     # UD syntax
-    "dep_heads": {"source_key": "head", "deserialize": lambda val: int(val) - 1},
+    #"dep_heads": {"source_key": "head", "deserialize": lambda val: int(val) - 1},
     "dep_rels": {"source_key": "deprel", "label_namespace": "deprel"},
     # distance (in tokens) to the head
     "head_distances": {"source_key": "head_dist"},
-    # length of each token in chars
-    "token_lengths": {"source_key": "tok_len"},
-    # morphological features (NOTE: might need some breaking up)
-    "morphs": {"source_key": "morph", "label_namespace": "morphs"},
+    ## length of each token in chars
+    #"token_lengths": {"source_key": "tok_len"},
+    ## morphological features (NOTE: might need some breaking up)
+    #"morphs": {"source_key": "morph", "label_namespace": "morphs"},
     # sentence type (NOTE: might need some breaking up
-    "sentence_type": {"source_key": "s_type", "label_namespace": "s_types"},
-    # how deep into the doc we are TODO: verify
-    "document_depth": {"source_key": "sent_doc_percentile"},
-    # length of the sentence
-    "sentence_length": {"source_key": "s_len"},
-    # whether the token is a bracket TODO: verify
-    "token_is_bracket": {"source_key": "bracket"},
+    #"sentence_type": {"source_key": "s_type", "label_namespace": "s_types"},
+    ## how deep into the doc we are TODO: verify
+    #"document_depth": {"source_key": "sent_doc_percentile"},
+    ## length of the sentence
+    #"sentence_length": {"source_key": "s_len"},
+    ## whether the token is a bracket TODO: verify
+    #"token_is_bracket": {"source_key": "bracket"},
 }
 
 
