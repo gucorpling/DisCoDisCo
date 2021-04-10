@@ -80,6 +80,7 @@ CONLL_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_test.conll"
 allennlp predict \
 	"${MODEL_DIR}/model.tar.gz" \
 	"$CONLL_GOLD_PATH" \
+	--silent \
 	--use-dataset-reader \
 	--cuda-device 0 \
 	--output-file "$JSON_PRED_PATH"
