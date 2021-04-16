@@ -27,9 +27,11 @@ from gucorpling_models.seg.features import FEATURES, get_feature_modules
 @Model.register("disrpt_2021_seg_baseline")
 class Disrpt2021Baseline(Model):
     """
-    A simple encoder-decoder baseline which embeds all four spans (each unit's sentence and discourse unit),
-    uses a seq2vec encoder to encode each span, and decodes using a simple linear transform
-    for the direction and the relation.
+    A simple seq2seq baseline for discourse segmentation. It:
+    - embeds the sentence and neighboring sentences
+    - uses a seq2vec encoder for the neighboring sentences
+    - seq2seq encodes the sentence along with categorical features such as POS tags
+    - decodes using a CRF
 
     Based in part on https://github.com/allenai/allennlp-models/blob/main/allennlp_models/tagging/models/crf_tagger.py
     """
