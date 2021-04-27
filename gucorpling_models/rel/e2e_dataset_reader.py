@@ -8,8 +8,9 @@ from overrides import overrides
 from allennlp.data import DatasetReader, Instance, Field
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
-from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer, PretrainedTransformerTokenizer
-from allennlp_models.coref.util import make_coref_instance
+from allennlp.data.tokenizers import Token, PretrainedTransformerTokenizer
+from gucorpling_models.rel.e2e_util import make_coref_instance
+# from allennlp_models.coref.util import make_coref_instance
 from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 from gucorpling_models.seg.dataset_reader import group_by_sentence
 
@@ -132,6 +133,8 @@ class Disrpt2021RelReader(DatasetReader):
             self._wordpiece_modeling_tokenizer,
             self._max_sentences,
             self._remove_singleton_clusters,
+            dir,
+            label
         )
 
     @overrides
