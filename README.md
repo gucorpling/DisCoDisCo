@@ -133,6 +133,17 @@ input 162:  Instance with fields:
 }
 ```
 
+### Ensemble Segmentation Module
+
+Each of the three modules will produce JSON output in `models/seg_ensemble_jsons/{allennlp,flair,subtree}/{zho.rst.sctb,...}.json`.
+To run the ensemble modules for a single corpus, invoke the following command:
+
+```bash
+bash seg_scripts/ensemble/single_corpus_train_and_test.sh zho.rst.sctb
+```
+
+To clean up after a run, just `rm -rf models/`.
+
 ### Setting up configs
 
 TODO, but see https://guide.allennlp.org/using-config-files/
