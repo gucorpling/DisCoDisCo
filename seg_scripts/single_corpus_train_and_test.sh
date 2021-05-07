@@ -1,5 +1,5 @@
 #!/bin/bash
-set -o errexit
+#set -o errexit
 if [ $# -eq 0 ]; then
 	echo "Supply the name of a corpus"
 	exit 1
@@ -13,7 +13,7 @@ if [[ ! -d $CORPUS_DIR ]]; then
 fi
 if [[ -d $MODEL_DIR ]]; then
 	echo "\"$MODEL_DIR\" already exists. Please remove it."
-	exit 1
+#	exit 1
 fi
 
 # use language-specific berts if we can
@@ -25,6 +25,8 @@ elif [[ "$CORPUS" == "zho"* ]]; then
 	export EMBEDDING_MODEL_NAME="bert-base-chinese"
 elif [[ "$CORPUS" == "eus"* ]]; then
 	export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
+elif [[ "$CORPUS" == "por"* ]]; then
+  export EMBEDDING_MODEL_NAME="neuralmind/bert-base-portuguese-cased"
 elif [[ "$CORPUS" == "tur"* ]]; then
 	export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 else
@@ -66,9 +68,9 @@ echo ""
 export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
 echo $TRAIN_DATA_PATH
-allennlp train \
-	configs/seg/baseline/bert_baseline.jsonnet \
-	-s "$MODEL_DIR"
+#allennlp train \
+#	configs/seg/baseline/bert_biattentive.jsonnet \
+#	-s "$MODEL_DIR"
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Testing on ${CORPUS}"
@@ -94,6 +96,12 @@ echo ""
 python seg_scripts/format_output.py "$JSON_PRED_PATH" "$CONLL_PRED_PATH"
 python seg_scripts/seg_eval_2019_modified.py "$CONLL_GOLD_PATH" "$CONLL_PRED_PATH" | tee "$MODEL_DIR/score.txt"
 printf "#!/bin/sh\npython seg_scripts/seg_eval_2019_modified.py $CONLL_GOLD_PATH $CONLL_PRED_PATH\n" > "$MODEL_DIR/calc_score.sh"
+if [ ! -z "$3" ]; then
+  JSON_PATH="$3/$1.json"
+  mkdir -p "$3"
+  echo "Writing JSON to $JSON_PATH"
+  python seg_scripts/allennlp_json_to_ensemble_json.py "$JSON_PRED_PATH" "$JSON_PATH"
+fi
 
 # Accumulate a record of scores
 TSV_PATH="all_scores.tsv"

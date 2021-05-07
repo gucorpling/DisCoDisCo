@@ -23,7 +23,7 @@ def make_coref_instance(
     max_sentences: int = None,
     remove_singleton_clusters: bool = True,
     dir: List[List[Tuple[str, Tuple]]] = None,
-    label: List[Tuple[str, Tuple]] = None
+    label: List[Tuple[str, Tuple]] = None,
 ) -> Instance:
 
     """
@@ -87,9 +87,7 @@ def make_coref_instance(
     flattened_sentences = [_normalize_word(word) for sentence in sentences for word in sentence]
 
     if wordpiece_modeling_tokenizer is not None:
-        flat_sentences_tokens, offsets = wordpiece_modeling_tokenizer.intra_word_tokenize(
-            flattened_sentences
-        )
+        flat_sentences_tokens, offsets = wordpiece_modeling_tokenizer.intra_word_tokenize(flattened_sentences)
         flattened_sentences = [t.text for t in flat_sentences_tokens]
     else:
         flat_sentences_tokens = [Token(word) for word in flattened_sentences]
@@ -118,9 +116,7 @@ def make_coref_instance(
 
     sentence_offset = 0
     for sentence in sentences:
-        for start, end in enumerate_spans(
-            sentence, offset=sentence_offset, max_span_width=max_span_width
-        ):
+        for start, end in enumerate_spans(sentence, offset=sentence_offset, max_span_width=max_span_width):
             if wordpiece_modeling_tokenizer is not None:
                 start = offsets[start][0]
                 end = offsets[end][1]
@@ -135,9 +131,7 @@ def make_coref_instance(
                 # We also don't generate spans that contain special tokens
                 if start < len(wordpiece_modeling_tokenizer.single_sequence_start_tokens):
                     continue
-                if end >= len(flat_sentences_tokens) - len(
-                    wordpiece_modeling_tokenizer.single_sequence_end_tokens
-                ):
+                if end >= len(flat_sentences_tokens) - len(wordpiece_modeling_tokenizer.single_sequence_end_tokens):
                     continue
 
             if span_labels is not None:
@@ -178,6 +172,7 @@ def make_coref_instance(
     # fields["label"] = SequenceLabelField(label)
 
     return Instance(fields)
+
 
 def _normalize_word(word):
     if word in ("/.", "/?"):

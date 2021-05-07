@@ -66,34 +66,30 @@ class E2eResolver(Model):
     """
 
     def __init__(
-            self,
-            vocab: Vocabulary,
-            text_field_embedder: TextFieldEmbedder,
-            context_layer: Seq2SeqEncoder,
-            mention_feedforward: FeedForward,
-            antecedent_feedforward: FeedForward,
-            feature_size: int,
-            max_span_width: int,
-            spans_per_word: float,
-            max_antecedents: int,
-            coarse_to_fine: bool = False,
-            inference_order: int = 1,
-            lexical_dropout: float = 0.2,
-            initializer: InitializerApplicator = InitializerApplicator(),
-            **kwargs
+        self,
+        vocab: Vocabulary,
+        text_field_embedder: TextFieldEmbedder,
+        context_layer: Seq2SeqEncoder,
+        mention_feedforward: FeedForward,
+        antecedent_feedforward: FeedForward,
+        feature_size: int,
+        max_span_width: int,
+        spans_per_word: float,
+        max_antecedents: int,
+        coarse_to_fine: bool = False,
+        inference_order: int = 1,
+        lexical_dropout: float = 0.2,
+        initializer: InitializerApplicator = InitializerApplicator(),
+        **kwargs
     ) -> None:
         super().__init__(vocab, **kwargs)
 
         self._text_field_embedder = text_field_embedder
         self._context_layer = context_layer
         self._mention_feedforward = TimeDistributed(mention_feedforward)
-        self._mention_scorer = TimeDistributed(
-            torch.nn.Linear(mention_feedforward.get_output_dim(), 1)
-        )
+        self._mention_scorer = TimeDistributed(torch.nn.Linear(mention_feedforward.get_output_dim(), 1))
         self._antecedent_feedforward = TimeDistributed(antecedent_feedforward)
-        self._antecedent_scorer = TimeDistributed(
-            torch.nn.Linear(antecedent_feedforward.get_output_dim(), 1)
-        )
+        self._antecedent_scorer = TimeDistributed(torch.nn.Linear(antecedent_feedforward.get_output_dim(), 1))
 
         self._endpoint_span_extractor = EndpointSpanExtractor(
             context_layer.get_output_dim(),
@@ -102,15 +98,11 @@ class E2eResolver(Model):
             span_width_embedding_dim=feature_size,
             bucket_widths=False,
         )
-        self._attentive_span_extractor = SelfAttentiveSpanExtractor(
-            input_dim=text_field_embedder.get_output_dim()
-        )
+        self._attentive_span_extractor = SelfAttentiveSpanExtractor(input_dim=text_field_embedder.get_output_dim())
 
         # 10 possible distance buckets.
         self._num_distance_buckets = 10
-        self._distance_embedding = Embedding(
-            embedding_dim=feature_size, num_embeddings=self._num_distance_buckets
-        )
+        self._distance_embedding = Embedding(embedding_dim=feature_size, num_embeddings=self._num_distance_buckets)
 
         self._max_span_width = max_span_width
         self._spans_per_word = spans_per_word
@@ -135,12 +127,12 @@ class E2eResolver(Model):
 
     @overrides
     def forward(
-            self,  # type: ignore
-            text: TextFieldTensors,
-            spans: torch.IntTensor,
-            gold_spans: torch.IntTensor,
-            span_labels: torch.IntTensor = None,
-            metadata: List[Dict[str, Any]] = None,
+        self,  # type: ignore
+        text: TextFieldTensors,
+        spans: torch.IntTensor,
+        gold_spans: torch.IntTensor,
+        span_labels: torch.IntTensor = None,
+        metadata: List[Dict[str, Any]] = None,
     ) -> Dict[str, torch.Tensor]:
 
         """
@@ -219,9 +211,7 @@ class E2eResolver(Model):
         num_spans_to_keep = min(num_spans_to_keep, num_spans)
 
         # Shape: (batch_size, num_spans)
-        span_mention_scores = self._mention_scorer(
-            self._mention_feedforward(span_embeddings)
-        ).squeeze(-1)
+        span_mention_scores = self._mention_scorer(self._mention_feedforward(span_embeddings)).squeeze(-1)
         # Shape: (batch_size, num_spans) for all 3 tensors
         top_span_mention_scores, top_span_mask, top_span_indices = util.masked_topk(
             span_mention_scores, span_mask, num_spans_to_keep
@@ -239,9 +229,7 @@ class E2eResolver(Model):
         # Shape: (batch_size, num_spans_to_keep, 2)
         top_spans = util.batched_index_select(gold_spans, top_span_indices, flat_top_span_indices)
         # Shape: (batch_size, num_spans_to_keep, embedding_size)
-        top_span_embeddings = util.batched_index_select(
-            span_embeddings, top_span_indices, flat_top_span_indices
-        )
+        top_span_embeddings = util.batched_index_select(span_embeddings, top_span_indices, flat_top_span_indices)
 
         # Compute indices for antecedent spans to consider.
         max_antecedents = min(self._max_antecedents, num_spans_to_keep)
@@ -262,9 +250,7 @@ class E2eResolver(Model):
                 top_span_embeddings, top_span_mention_scores, top_span_mask, max_antecedents
             )
         else:
-            pruned_antecedents = self._distance_pruning(
-                top_span_embeddings, top_span_mention_scores, max_antecedents
-            )
+            pruned_antecedents = self._distance_pruning(top_span_embeddings, top_span_mention_scores, max_antecedents)
 
         # Shape: (batch_size, num_spans_to_keep, max_antecedents) for all 4 tensors
         (
@@ -274,9 +260,7 @@ class E2eResolver(Model):
             top_antecedent_indices,
         ) = pruned_antecedents
 
-        flat_top_antecedent_indices = util.flatten_and_batch_shift_indices(
-            top_antecedent_indices, num_spans_to_keep
-        )
+        flat_top_antecedent_indices = util.flatten_and_batch_shift_indices(top_antecedent_indices, num_spans_to_keep)
 
         # Shape: (batch_size, num_spans_to_keep, max_antecedents, embedding_size)
         top_antecedent_embeddings = util.batched_index_select(
@@ -304,13 +288,9 @@ class E2eResolver(Model):
                 [top_span_embeddings.unsqueeze(2), top_antecedent_embeddings], 2
             )
             # Shape: (batch_size, num_spans_to_keep, embedding_size)
-            attended_embeddings = util.weighted_sum(
-                top_antecedent_with_dummy_embeddings, attention_weight
-            )
+            attended_embeddings = util.weighted_sum(top_antecedent_with_dummy_embeddings, attention_weight)
             # Shape: (batch_size, num_spans_to_keep, embedding_size)
-            top_span_embeddings = self._span_updating_gated_sum(
-                top_span_embeddings, attended_embeddings
-            )
+            top_span_embeddings = self._span_updating_gated_sum(top_span_embeddings, attended_embeddings)
 
             # Shape: (batch_size, num_spans_to_keep, max_antecedents, embedding_size)
             top_antecedent_embeddings = util.batched_index_select(
@@ -351,15 +331,11 @@ class E2eResolver(Model):
             antecedent_labels = util.batched_index_select(
                 pruned_gold_labels, top_antecedent_indices, flat_top_antecedent_indices
             ).squeeze(-1)
-            antecedent_labels = util.replace_masked_values(
-                antecedent_labels, top_antecedent_mask, -100
-            )
+            antecedent_labels = util.replace_masked_values(antecedent_labels, top_antecedent_mask, -100)
 
             # Compute labels.
             # Shape: (batch_size, num_spans_to_keep, max_antecedents + 1)
-            gold_antecedent_labels = self._compute_antecedent_gold_labels(
-                pruned_gold_labels, antecedent_labels
-            )
+            gold_antecedent_labels = self._compute_antecedent_gold_labels(pruned_gold_labels, antecedent_labels)
             # Now, compute the loss using the negative marginal log-likelihood.
             # This is equal to the log of the sum of the probabilities of all antecedent predictions
             # that would be consistent with the data, in the sense that we are minimising, for a
@@ -370,16 +346,12 @@ class E2eResolver(Model):
             # probability assigned to all valid antecedents. This is a valid objective for
             # clustering as we don't mind which antecedent is predicted, so long as they are in
             #  the same coreference cluster.
-            coreference_log_probs = util.masked_log_softmax(
-                coreference_scores, top_span_mask.unsqueeze(-1)
-            )
+            coreference_log_probs = util.masked_log_softmax(coreference_scores, top_span_mask.unsqueeze(-1))
             correct_antecedent_log_probs = coreference_log_probs + gold_antecedent_labels.log()
             negative_marginal_log_likelihood = -util.logsumexp(correct_antecedent_log_probs).sum()
 
             self._mention_recall(top_spans, metadata)
-            self._conll_coref_scores(
-                top_spans, top_antecedent_indices, predicted_antecedents, metadata
-            )
+            self._conll_coref_scores(top_spans, top_antecedent_indices, predicted_antecedents, metadata)
 
             output_dict["loss"] = negative_marginal_log_likelihood
 
@@ -426,7 +398,7 @@ class E2eResolver(Model):
         # Calling zip() on two tensors results in an iterator over their
         # first dimension. This is iterating over instances in the batch.
         for top_spans, predicted_antecedents, antecedent_indices in zip(
-                batch_top_spans, batch_predicted_antecedents, batch_antecedent_indices
+            batch_top_spans, batch_predicted_antecedents, batch_antecedent_indices
         ):
             spans_to_cluster_ids: Dict[Tuple[int, int], int] = {}
             clusters: List[List[Tuple[int, int]]] = []
@@ -484,7 +456,7 @@ class E2eResolver(Model):
 
     @staticmethod
     def _generate_valid_antecedents(
-            num_spans_to_keep: int, max_antecedents: int, device: int
+        num_spans_to_keep: int, max_antecedents: int, device: int
     ) -> Tuple[torch.IntTensor, torch.IntTensor, torch.BoolTensor]:
         """
         This method generates possible antecedents per span which survived the pruning
@@ -541,10 +513,10 @@ class E2eResolver(Model):
         return valid_antecedent_indices, valid_antecedent_offsets, valid_antecedent_mask
 
     def _distance_pruning(
-            self,
-            top_span_embeddings: torch.FloatTensor,
-            top_span_mention_scores: torch.FloatTensor,
-            max_antecedents: int,
+        self,
+        top_span_embeddings: torch.FloatTensor,
+        top_span_mention_scores: torch.FloatTensor,
+        max_antecedents: int,
     ) -> Tuple[torch.FloatTensor, torch.BoolTensor, torch.LongTensor, torch.LongTensor]:
         """
         Generates antecedents for each span and prunes down to `max_antecedents`. This method
@@ -609,15 +581,9 @@ class E2eResolver(Model):
         ).squeeze(-1)
 
         # Shape: (batch_size, num_spans_to_keep, max_antecedents) * 4
-        top_partial_coreference_scores = (
-                top_span_mention_scores.unsqueeze(-1) + top_antecedent_mention_scores
-        )
-        top_antecedent_indices = top_antecedent_indices.unsqueeze(0).expand_as(
-            top_partial_coreference_scores
-        )
-        top_antecedent_offsets = top_antecedent_offsets.unsqueeze(0).expand_as(
-            top_partial_coreference_scores
-        )
+        top_partial_coreference_scores = top_span_mention_scores.unsqueeze(-1) + top_antecedent_mention_scores
+        top_antecedent_indices = top_antecedent_indices.unsqueeze(0).expand_as(top_partial_coreference_scores)
+        top_antecedent_offsets = top_antecedent_offsets.unsqueeze(0).expand_as(top_partial_coreference_scores)
         top_antecedent_mask = top_antecedent_mask.expand_as(top_partial_coreference_scores)
 
         return (
@@ -628,11 +594,11 @@ class E2eResolver(Model):
         )
 
     def _coarse_to_fine_pruning(
-            self,
-            top_span_embeddings: torch.FloatTensor,
-            top_span_mention_scores: torch.FloatTensor,
-            top_span_mask: torch.BoolTensor,
-            max_antecedents: int,
+        self,
+        top_span_embeddings: torch.FloatTensor,
+        top_span_mention_scores: torch.FloatTensor,
+        top_span_mask: torch.BoolTensor,
+        max_antecedents: int,
     ) -> Tuple[torch.FloatTensor, torch.BoolTensor, torch.LongTensor, torch.LongTensor]:
         """
         Generates antecedents for each span and prunes down to `max_antecedents`. This method
@@ -679,9 +645,7 @@ class E2eResolver(Model):
         device = util.get_device_of(top_span_embeddings)
 
         # Shape: (1, num_spans_to_keep, num_spans_to_keep)
-        _, _, valid_antecedent_mask = self._generate_valid_antecedents(
-            num_spans_to_keep, num_spans_to_keep, device
-        )
+        _, _, valid_antecedent_mask = self._generate_valid_antecedents(num_spans_to_keep, num_spans_to_keep, device)
 
         mention_one_score = top_span_mention_scores.unsqueeze(1)
         mention_two_score = top_span_mention_scores.unsqueeze(2)
@@ -708,8 +672,8 @@ class E2eResolver(Model):
         # TODO: we need to make `batched_index_select` more general to make this less awkward.
         top_antecedent_offsets = util.batched_index_select(
             valid_antecedent_offsets.unsqueeze(0)
-                .expand(batch_size, num_spans_to_keep, num_spans_to_keep)
-                .reshape(batch_size * num_spans_to_keep, num_spans_to_keep, 1),
+            .expand(batch_size, num_spans_to_keep, num_spans_to_keep)
+            .reshape(batch_size * num_spans_to_keep, num_spans_to_keep, 1),
             top_antecedent_indices.view(-1, max_antecedents),
         ).reshape(batch_size, num_spans_to_keep, max_antecedents)
 
@@ -721,10 +685,10 @@ class E2eResolver(Model):
         )
 
     def _compute_span_pair_embeddings(
-            self,
-            top_span_embeddings: torch.FloatTensor,
-            antecedent_embeddings: torch.FloatTensor,
-            antecedent_offsets: torch.FloatTensor,
+        self,
+        top_span_embeddings: torch.FloatTensor,
+        antecedent_embeddings: torch.FloatTensor,
+        antecedent_offsets: torch.FloatTensor,
     ):
         """
         Computes an embedding representation of pairs of spans for the pairwise scoring function
@@ -772,9 +736,7 @@ class E2eResolver(Model):
         return span_pair_embeddings
 
     @staticmethod
-    def _compute_antecedent_gold_labels(
-            top_span_labels: torch.IntTensor, antecedent_labels: torch.IntTensor
-    ):
+    def _compute_antecedent_gold_labels(top_span_labels: torch.IntTensor, antecedent_labels: torch.IntTensor):
         """
         Generates a binary indicator for every pair of spans. This label is one if and
         only if the pair of spans belong to the same cluster. The labels are augmented
@@ -813,12 +775,12 @@ class E2eResolver(Model):
         return pairwise_labels_with_dummy_label
 
     def _compute_coreference_scores(
-            self,
-            top_span_embeddings: torch.FloatTensor,
-            top_antecedent_embeddings: torch.FloatTensor,
-            top_partial_coreference_scores: torch.FloatTensor,
-            top_antecedent_mask: torch.BoolTensor,
-            top_antecedent_offsets: torch.FloatTensor,
+        self,
+        top_span_embeddings: torch.FloatTensor,
+        top_antecedent_embeddings: torch.FloatTensor,
+        top_partial_coreference_scores: torch.FloatTensor,
+        top_antecedent_mask: torch.BoolTensor,
+        top_antecedent_offsets: torch.FloatTensor,
     ) -> torch.FloatTensor:
         """
         Computes scores for every pair of spans. Additionally, a dummy label is included,
@@ -862,9 +824,7 @@ class E2eResolver(Model):
         )
 
         # Shape: (batch_size, num_spans_to_keep, max_antecedents)
-        antecedent_scores = self._antecedent_scorer(
-            self._antecedent_feedforward(span_pair_embeddings)
-        ).squeeze(-1)
+        antecedent_scores = self._antecedent_scorer(self._antecedent_feedforward(span_pair_embeddings)).squeeze(-1)
         antecedent_scores += top_partial_coreference_scores
         antecedent_scores = util.replace_masked_values(
             antecedent_scores, top_antecedent_mask, util.min_value_of_dtype(antecedent_scores.dtype)

@@ -10,6 +10,7 @@ from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Token, PretrainedTransformerTokenizer
 from gucorpling_models.rel.e2e_util import make_coref_instance
+
 # from allennlp_models.coref.util import make_coref_instance
 from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 from gucorpling_models.seg.dataset_reader import group_by_sentence
@@ -37,7 +38,7 @@ def mapping(tok_doc: List[str], conll_doc: List[str]) -> Dict[str, Dict[int, Tup
             count_tok = 1
         elif "\t" in line:
             tok_id = count_tok
-            while '\t' not in conll_doc[count_conll]:
+            while "\t" not in conll_doc[count_conll]:
                 if conll_doc[count_conll].startswith("# sent_id"):
                     sent_id = int(conll_doc[count_conll].split("-")[-1]) - 1
                 count_conll += 1
@@ -88,15 +89,17 @@ def merge_spans(doc, tok_conll_mapping, doc_of_sents, left_end, right_start, rig
     left_end_tok_id = tok_conll_mapping[doc][left_end]
     right_start_tok_id = tok_conll_mapping[doc][right_start]
     right_end_tok_id = tok_conll_mapping[doc][right_end]
-    gap_words = doc_of_sents[doc][right_start_tok_id[0]][left_end_tok_id[1] + 1:right_start_tok_id[1]]
-    right_words = doc_of_sents[doc][right_start_tok_id[0]][right_start_tok_id[1]:right_end_tok_id[1] + 1]
+    gap_words = doc_of_sents[doc][right_start_tok_id[0]][left_end_tok_id[1] + 1 : right_start_tok_id[1]]
+    right_words = doc_of_sents[doc][right_start_tok_id[0]][right_start_tok_id[1] : right_end_tok_id[1] + 1]
 
     assert left_end_tok_id[0] == right_start_tok_id[0]
 
-    return doc_of_sents[doc][right_start_tok_id[0]][:left_end_tok_id[1] + 1] \
-            + right_words \
-            + gap_words \
-            + doc_of_sents[doc][right_start_tok_id[0]][right_end_tok_id[1] + 1:]
+    return (
+        doc_of_sents[doc][right_start_tok_id[0]][: left_end_tok_id[1] + 1]
+        + right_words
+        + gap_words
+        + doc_of_sents[doc][right_start_tok_id[0]][right_end_tok_id[1] + 1 :]
+    )
 
 
 @DatasetReader.register("disrpt_2021_rel_e2e")
@@ -123,7 +126,7 @@ class Disrpt2021RelReader(DatasetReader):
         sentences: List[List[str]],
         gold_clusters: Optional[List[List[Tuple[int, int]]]],
         dir: List,
-        label: List
+        label: List,
     ) -> Instance:
         return make_coref_instance(
             sentences,
@@ -134,7 +137,7 @@ class Disrpt2021RelReader(DatasetReader):
             self._max_sentences,
             self._remove_singleton_clusters,
             dir,
-            label
+            label,
         )
 
     @overrides
@@ -161,15 +164,15 @@ class Disrpt2021RelReader(DatasetReader):
         tok_file_path = rels_file_path.replace(".rels", ".tok")
 
         tok_conll_mapping = mapping(
-            io.open(tok_file_path, encoding='utf-8').read().split('\n'),
-            io.open(conll_file_path, encoding='utf-8').read().split('\n')
+            io.open(tok_file_path, encoding="utf-8").read().split("\n"),
+            io.open(conll_file_path, encoding="utf-8").read().split("\n"),
         )
-        doc_of_sents = get_sents(io.open(conll_file_path, encoding='utf-8').read().split('\n'))
+        doc_of_sents = get_sents(io.open(conll_file_path, encoding="utf-8").read().split("\n"))
 
         non_seen_doc = []
         seen = {}
         docs = {}
-        with io.open(rels_file_path, "r", encoding='utf-8') as f:
+        with io.open(rels_file_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             for row in reader:
                 doc = row["doc"]
@@ -191,30 +194,32 @@ class Disrpt2021RelReader(DatasetReader):
                     seen[doc] = []
                 if "," in unit1_toks:
                     left1, right1 = unit1_toks.split(",")[0], unit1_toks.split(",")[1]
-                    left1_start, left1_end = int(left1.split('-')[0]), int(left1.split('-')[-1])
-                    right1_start, right1_end = int(right1.split('-')[0]), int(right1.split('-')[-1])
+                    left1_start, left1_end = int(left1.split("-")[0]), int(left1.split("-")[-1])
+                    right1_start, right1_end = int(right1.split("-")[0]), int(right1.split("-")[-1])
 
                     if unit1_toks not in seen[doc]:
                         sent_id1 = tok_conll_mapping[doc][right1_start][0]
-                        doc_of_sents[doc][sent_id1] = merge_spans(doc, tok_conll_mapping, doc_of_sents, left1_end,
-                                                                  right1_start, right1_end)
+                        doc_of_sents[doc][sent_id1] = merge_spans(
+                            doc, tok_conll_mapping, doc_of_sents, left1_end, right1_start, right1_end
+                        )
                         seen[doc].append(unit1_toks)
-                    span = (left1_start, right1_end - (right1_start-left1_end+1))
+                    span = (left1_start, right1_end - (right1_start - left1_end + 1))
                 else:
-                    span = (int(unit1_toks.split('-')[0]), int(unit1_toks.split('-')[-1]))
+                    span = (int(unit1_toks.split("-")[0]), int(unit1_toks.split("-")[-1]))
 
                 if "," in unit2_toks:
                     left2, right2 = unit2_toks.split(",")[0], unit2_toks.split(",")[1]
-                    left2_start, left2_end = int(left2.split('-')[0]), int(left2.split('-')[-1])
-                    right2_start, right2_end = int(right2.split('-')[0]), int(right2.split('-')[-1])
+                    left2_start, left2_end = int(left2.split("-")[0]), int(left2.split("-")[-1])
+                    right2_start, right2_end = int(right2.split("-")[0]), int(right2.split("-")[-1])
                     if unit2_toks not in seen[doc]:
                         sent_id2 = tok_conll_mapping[doc][right2_start][0]
-                        doc_of_sents[doc][sent_id2] = merge_spans(doc, tok_conll_mapping, doc_of_sents, left2_end,
-                                                                  right2_start, right2_end)
+                        doc_of_sents[doc][sent_id2] = merge_spans(
+                            doc, tok_conll_mapping, doc_of_sents, left2_end, right2_start, right2_end
+                        )
                         seen[doc].append(unit2_toks)
                     next_span = (left2_start, right2_end - (right2_start - left2_end + 1))
                 else:
-                    next_span = (int(unit2_toks.split('-')[0]), int(unit2_toks.split('-')[-1]))
+                    next_span = (int(unit2_toks.split("-")[0]), int(unit2_toks.split("-")[-1]))
 
                 if span not in docs[doc]["spans"]:
                     docs[doc]["spans"].append(span)
@@ -226,5 +231,5 @@ class Disrpt2021RelReader(DatasetReader):
                 sentences=doc_of_sents[docname],
                 gold_clusters=[docs[docname]["spans"]],
                 dir=docs[docname]["dir"],
-                label=docs[docname]["label"]
+                label=docs[docname]["label"],
             )

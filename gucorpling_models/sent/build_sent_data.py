@@ -3,22 +3,22 @@ import os
 from collections import defaultdict
 
 # the following directory should only containing data folders:
-DATA_DIR = '../../sharedtask2019/data/'
-OUT_DIR = 'output_data/'
+DATA_DIR = "../../sharedtask2019/data/"
+OUT_DIR = "output_data/"
 
 if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)
 
-names = os.listdir(DATA_DIR+'/')
-partition = ['_train', '_dev', '_test']
+names = os.listdir(DATA_DIR + "/")
+partition = ["_train", "_dev", "_test"]
 
 for n in names:
-    if not os.path.isdir(DATA_DIR + n + '/'):
+    if not os.path.isdir(DATA_DIR + n + "/"):
         continue
-    file_ = DATA_DIR + n + '/' + n
+    file_ = DATA_DIR + n + "/" + n
     data = defaultdict(list)
     for p in partition:
-        file = file_ + p + '.conll'
+        file = file_ + p + ".conll"
         lines = io.open(file, encoding="utf8").read().strip().split("\n")
 
         for line in lines:
@@ -47,7 +47,7 @@ for n in names:
 
         data[p].append("")
 
-    path = OUT_DIR + n + '/'
+    path = OUT_DIR + n + "/"
     if not os.path.exists(path):
         os.makedirs(path)
     for d in data:

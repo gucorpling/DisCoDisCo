@@ -147,17 +147,17 @@ class Disrpt2021SegBiattentive(Model):
 
         # First encoder
         encoded_sequence = self.encoder(encoder_input, mask)
-        #attention_logits = encoded_sequence.bmm(encoded_sequence.permute(0, 2, 1).contiguous())
-        #attention_weights = masked_softmax(attention_logits, mask)
-        #biattentive_encoded_sequence = weighted_sum(encoded_sequence, attention_weights)
+        # attention_logits = encoded_sequence.bmm(encoded_sequence.permute(0, 2, 1).contiguous())
+        # attention_weights = masked_softmax(attention_logits, mask)
+        # biattentive_encoded_sequence = weighted_sum(encoded_sequence, attention_weights)
 
         # Second encoder
         integrator_input = torch.cat(
             [
                 encoder_input,
                 encoded_sequence,
-                #encoded_sequence - biattentive_encoded_sequence,
-                #encoded_sequence * biattentive_encoded_sequence,
+                # encoded_sequence - biattentive_encoded_sequence,
+                # encoded_sequence * biattentive_encoded_sequence,
             ],
             2,
         )

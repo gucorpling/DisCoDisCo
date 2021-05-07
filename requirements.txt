@@ -6,3 +6,5 @@ black==20.8b1
 xgboost
 scikit-learn
 joblib
+pandas
+flair

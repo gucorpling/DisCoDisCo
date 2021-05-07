@@ -1,12 +1,6 @@
 from flair.data import Corpus, Sentence
 from flair.datasets import ColumnCorpus
-from flair.embeddings import (
-    StackedEmbeddings,
-    FlairEmbeddings,
-    CharacterEmbeddings,
-    WordEmbeddings,
-    BertEmbeddings
-)
+from flair.embeddings import StackedEmbeddings, FlairEmbeddings, CharacterEmbeddings, WordEmbeddings, BertEmbeddings
 from flair.models import SequenceTagger
 import flair
 
@@ -108,12 +102,12 @@ def fix_malformed_sentences(sgml_list):
 
             # case 1: we've encountered a non-s closing tag. If...
             if (
-                    tagname != "s"  # the closing tag is not an s
-                    and len(tag_opened["s"]) > 0  # and we're in a sentence
-                    and len(tag_opened[tagname]) > 0
-                    and len(tag_opened["s"]) > 0  # and the sentence opened after the tag
-                    and tag_opened[tagname][-1] < tag_opened["s"][-1]
-                    and "</s>" not in mns  # the sentence is not closed in the mns
+                tagname != "s"  # the closing tag is not an s
+                and len(tag_opened["s"]) > 0  # and we're in a sentence
+                and len(tag_opened[tagname]) > 0
+                and len(tag_opened["s"]) > 0  # and the sentence opened after the tag
+                and tag_opened[tagname][-1] < tag_opened["s"][-1]
+                and "</s>" not in mns  # the sentence is not closed in the mns
             ):
                 # end sentence here and move i back to the line we were looking at
                 sgml_list.insert(i, "</s>")
@@ -125,13 +119,12 @@ def fix_malformed_sentences(sgml_list):
                 tag_opened[tagname].pop(-1)
             # case 2: s closing tag and there's some tag that opened inside of it that isn't closed in time
             elif tagname == "s" and any(
-                    e != "s" and f"</{e}>" not in mns
-                    for e in [
-                        e
-                        for e in tag_opened.keys()
-                        if
-                        len(tag_opened[e]) > 0 and len(tag_opened["s"]) > 0 and tag_opened[e][-1] > tag_opened["s"][-1]
-                    ]
+                e != "s" and f"</{e}>" not in mns
+                for e in [
+                    e
+                    for e in tag_opened.keys()
+                    if len(tag_opened[e]) > 0 and len(tag_opened["s"]) > 0 and tag_opened[e][-1] > tag_opened["s"][-1]
+                ]
             ):
                 # some non-s element opened within this sentence and has not been closed even in the mns
                 assert "<s>" in mns
@@ -172,8 +165,7 @@ def tokens2conllu(tokens):
     return tl
 
 
-class FlairSentSplitter():
-
+class FlairSentSplitter:
     def __init__(self, model_path=None, span_size=20, stride_size=10):
 
         self.span_size = span_size  # Each shingle is 20 tokens by default
@@ -218,13 +210,17 @@ class FlairSentSplitter():
             # comment in these lines to use flair embeddings
             # FlairEmbeddings("news-forward"),
             # FlairEmbeddings("news-backward"),
-            BertEmbeddings('bert-base-multilingual-cased')
+            BertEmbeddings("bert-base-multilingual-cased"),
         ]
 
         embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
 
         tagger: SequenceTagger = SequenceTagger(
-            hidden_size=256, embeddings=embeddings, tag_dictionary=tag_dictionary, tag_type=tag_type, use_crf=True,
+            hidden_size=256,
+            embeddings=embeddings,
+            tag_dictionary=tag_dictionary,
+            tag_type=tag_type,
+            use_crf=True,
         )
 
         trainer: ModelTrainer = ModelTrainer(tagger, corpus)
@@ -251,13 +247,13 @@ class FlairSentSplitter():
         toks = [re.sub(r"\t.*", "", t) for t in toks]
 
         # Hack tokens up into overlapping shingles
-        wraparound = toks[-self.stride_size:] + toks + toks[: self.span_size]
+        wraparound = toks[-self.stride_size :] + toks + toks[: self.span_size]
         idx = 0
         mapping = defaultdict(set)
         snum = 0
         while idx < len(toks):
             if idx + self.span_size < len(wraparound):
-                span = wraparound[idx: idx + self.span_size]
+                span = wraparound[idx : idx + self.span_size]
             else:
                 span = wraparound[idx:]
             sent = Sentence(" ".join(span), use_tokenizer=lambda x: x.split())
@@ -358,7 +354,7 @@ class FlairSentSplitter():
                     para = False
                 counter += 1
             elif any(f"<{elt}>" in line for elt in BLOCK_TAGS) or any(
-                    f"</{elt}>" in line for elt in BLOCK_TAGS
+                f"</{elt}>" in line for elt in BLOCK_TAGS
             ):  # New block, force sentence split
                 para = True
             splitted.append(line)
@@ -428,6 +424,7 @@ if __name__ == "__main__":
     sentencer = FlairSentSplitter()
     if opts.mode == "train":
         from glob import glob
+
         folders = glob(opts.file)
         for data_dir in folders:
             sentencer.train(data_dir)
