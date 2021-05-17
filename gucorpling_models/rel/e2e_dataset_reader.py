@@ -1,235 +1,158 @@
 import csv
 import io, os
+import math
 from typing import Dict, Iterable, Optional, List, Tuple
 from pprint import pprint
+from collections import defaultdict
 
 from overrides import overrides
 
+import torch
+from torch import tensor
 from allennlp.data import DatasetReader, Instance, Field
-from allennlp.data.fields import LabelField, TextField
-from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
-from allennlp.data.tokenizers import Token, PretrainedTransformerTokenizer
-from gucorpling_models.rel.e2e_util import make_coref_instance
-
-# from allennlp_models.coref.util import make_coref_instance
+from allennlp.data.fields import LabelField, TextField, TensorField, ArrayField, ListField
+from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer, PretrainedTransformerMismatchedIndexer
+from allennlp.data.tokenizers import Token, Tokenizer, PretrainedTransformerTokenizer
 from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 from gucorpling_models.seg.dataset_reader import group_by_sentence
 
 
-def mapping(tok_doc: List[str], conll_doc: List[str]) -> Dict[str, Dict[int, Tuple[int, int]]]:
-    """
-    Mapping token indices and sentence information
-    """
-    docs = {}
-    map_dict = {}
-    # count_tok = 1
-    count_conll = 0
-    sent_id = 0
-    doc_name = ""
-    for idx, line in enumerate(tok_doc):
-        if idx == len(tok_doc) - 1:
-            docs[doc_name] = map_dict
-        if line.startswith("# newdoc id"):
-            new_doc_name = line.split("=")[-1].strip()
-            if map_dict:
-                docs[doc_name] = map_dict
-                map_dict = {}
-            doc_name = new_doc_name
-            count_tok = 1
-        elif "\t" in line:
-            tok_id = count_tok
-            while "\t" not in conll_doc[count_conll]:
-                if conll_doc[count_conll].startswith("# sent_id"):
-                    sent_id = int(conll_doc[count_conll].split("-")[-1]) - 1
-                count_conll += 1
+def get_span_indices(unit_toks, s_toks, max_length: None):
+    s_start, s_end = int(s_toks.split("-")[0]), int(s_toks.split("-")[-1])
 
-            conll_id = int(conll_doc[count_conll].split("\t")[0]) - 1
-            map_dict[tok_id] = (sent_id, conll_id)
-            count_conll += 1
-            count_tok += 1
-    return docs
+    if "," in unit_toks:
+        left, right = unit_toks.split(",")[0], unit_toks.split(",")[1]
+        left_start, left_end = int(left.split("-")[0]) - s_start, int(left.split("-")[-1]) - s_start
+        right_start, right_end = int(right.split("-")[0])-s_start, int(right.split("-")[-1])-s_start
+        if max_length:
+            if max_length >= left_end:
+                left_end = max_length - 1
+                span = [(left_start, left_end)]
+            elif max_length >= right_start:
+                span = [(left_start, left_end)]
+            elif max_length >= right_end:
+                right_end = max_length - 1
+                span = [(left_start, left_end), (right_start, right_end)]
+        else:
+            span = [(left_start, left_end), (right_start, right_end)]
+    else:
+        left, right = int(unit_toks.split("-")[0])-s_start, int(unit_toks.split("-")[-1])-s_start
+        if max_length and right >= max_length:
+            right = max_length - 1
+        span = [(left, right)]
+    return span
 
 
-def get_sents(conll_doc: List[str]) -> Dict[str, List[List[str]]]:
-    """
-    Get sentences for each doc
-    """
-    doc_of_sents = {}
-    sents = []
-    sent = []
-    doc_name = ""
-    for idx, line in enumerate(conll_doc):
-        if idx == len(conll_doc) - 1:
-            doc_of_sents[doc_name] = sents
-        elif line:
-            if line.startswith("# newdoc id"):
-                new_doc_name = line.split("=")[-1].strip()
-                if sents:
-                    sents.append(sent)
-                    if doc_name:
-                        doc_of_sents[doc_name] = sents
-                    sents = []
-                    sent = []
-                doc_name = new_doc_name
-
-            if line.startswith("# sent_id"):
-                if sent:
-                    sents.append(sent)
-                    sent = []
-            elif line.startswith("#"):
-                continue
-            else:
-                sent.append(line.split("\t")[1])
-    return doc_of_sents
+def get_span_dist(unit1, unit2):
+    unit1_start_indice = int(unit1.split(",")[0].split("-")[0])
+    unit2_start_indice = int(unit2.split(",")[0].split("-")[0])
+    return unit1_start_indice-unit2_start_indice
 
 
-def merge_spans(doc, tok_conll_mapping, doc_of_sents, left_end, right_start, right_end):
-    # merge right to left to avoid the gap
-
-    left_end_tok_id = tok_conll_mapping[doc][left_end]
-    right_start_tok_id = tok_conll_mapping[doc][right_start]
-    right_end_tok_id = tok_conll_mapping[doc][right_end]
-    gap_words = doc_of_sents[doc][right_start_tok_id[0]][left_end_tok_id[1] + 1 : right_start_tok_id[1]]
-    right_words = doc_of_sents[doc][right_start_tok_id[0]][right_start_tok_id[1] : right_end_tok_id[1] + 1]
-
-    assert left_end_tok_id[0] == right_start_tok_id[0]
-
-    return (
-        doc_of_sents[doc][right_start_tok_id[0]][: left_end_tok_id[1] + 1]
-        + right_words
-        + gap_words
-        + doc_of_sents[doc][right_start_tok_id[0]][right_end_tok_id[1] + 1 :]
-    )
 
 
 @DatasetReader.register("disrpt_2021_rel_e2e")
 class Disrpt2021RelReader(DatasetReader):
     def __init__(
         self,
-        max_span_width: int,
+        tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
-        wordpiece_modeling_tokenizer: Optional[PretrainedTransformerTokenizer] = None,
-        max_sentences: int = None,
-        remove_singleton_clusters: bool = False,
+        max_length: int = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self._max_span_width = max_span_width
-        self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
-        self._wordpiece_modeling_tokenizer = wordpiece_modeling_tokenizer
-        self._max_sentences = max_sentences
-        self._remove_singleton_clusters = remove_singleton_clusters
+        self.tokenizer = tokenizer
+        self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
+        self.max_length = max_length  # useful for BERT
+
+    def tokenize_with_subtoken_map(self, text, span):
+        subtoken_map = [0]
+        token_to_subtokens = {}
+        count = 1
+
+        tokenized_text = [Token('[CLS]')]
+        for i, word in enumerate(text.split(' ')):
+            tokenized = self.tokenizer.tokenize(word)
+            if self.max_length and i >= self.max_length:
+                break
+            tokenized_text += tokenized[1:-1]
+            subtoken_map += [i+1] * (len(tokenized)-2)
+            token_to_subtokens[i] = (count, count+len(tokenized)-3)
+            count += len(tokenized)-2
+        tokenized_text.append(Token('[SEP]'))
+        subtoken_map.append(len(subtoken_map))
+
+        span_mask = [0] * len(tokenized_text)
+        for i, s in enumerate(span):
+            s_start, s_end = s
+            new_start, new_end = token_to_subtokens[s_start][0], token_to_subtokens[s_end][-1]
+            span[i] = (new_start, new_end)
+            for x in range(new_start, new_end+1):
+                span_mask[x] = 1
+
+        assert len(subtoken_map) == len(tokenized_text)
+        return tokenized_text, span, span_mask
 
     @overrides
     def text_to_instance(
         self,  # type: ignore
-        sentences: List[List[str]],
-        gold_clusters: Optional[List[List[Tuple[int, int]]]],
-        dir: List,
-        label: List,
+        # unit1_txt: str,
+        unit1_sent: str,
+        # unit2_txt: str,
+        unit2_sent: str,
+        span_dist: int,
+        unit1_span_indices: list,
+        unit2_span_indices: list,
+        dir: str,
+        label: str = None,
     ) -> Instance:
-        return make_coref_instance(
-            sentences,
-            self._token_indexers,
-            self._max_span_width,
-            gold_clusters,
-            self._wordpiece_modeling_tokenizer,
-            self._max_sentences,
-            self._remove_singleton_clusters,
-            dir,
-            label,
-        )
+
+        unit1_sent_tokens, new_unit1_span_indices, unit1_span_mask = self.tokenize_with_subtoken_map(unit1_sent, unit1_span_indices)
+        unit2_sent_tokens, new_unit2_span_indices, unit2_span_mask = self.tokenize_with_subtoken_map(unit2_sent, unit2_span_indices)
+
+        sent_tokens = unit1_sent_tokens + unit2_sent_tokens[1:]
+        adjusted_unit1_span_mask = unit1_span_mask + [0] * (len(unit2_span_mask)-1)
+        adjusted_unit2_span_mask = [0] * len(unit1_span_mask) + unit2_span_mask[1:]
+
+        # unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
+        # unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
+
+        fields: Dict[str, Field] = {
+            "sentences": TextField(sent_tokens, self.token_indexers),
+            "unit1_span_mask": TensorField(torch.tensor(adjusted_unit1_span_mask) > 0),
+            "unit2_span_mask": TensorField(torch.tensor(adjusted_unit2_span_mask) > 0),
+            "direction": LabelField(dir, label_namespace="direction_labels"),
+            "distance": TensorField(torch.tensor(span_dist))
+        }
+        if label:
+            fields["relation"] = LabelField(label, label_namespace="relation_labels")
+        return Instance(fields)
+
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        """
-        Tentatively we regard EDUs are in one cluster in a document. It should be noted that this is only a baseline
-          solution. One possible solution is to treat each level of a RST tree as a cluster, e.g. Level 2 may have
-          x individual subtrees so that it has x clusters.
-        It is also important to know the difference between this task and the coreference resolution task that different
-          spans can point back to the same antecedent in the relation classification task. There needs to be a better
-          solution to handle this issue.
-
-        Return:
-            sentences: `List[List[str]]`
-            gold_clusters: `List[List[Tuple[int, itn]]]`
-                Each element is a tuple composed of (cluster_id, (start_index, end_index)).
-            dir: `List[Tuple[str, Tuple[Span1, Span2]]]`, Span=Tuple[int, int]
-            label: `List[Tuple[str, Tuple[Span1, Span2]]]`
-        """
         assert file_path.endswith(".rels")
 
-        rels_file_path = file_path
-        conll_file_path = rels_file_path.replace(".rels", ".conllu")
-        tok_file_path = rels_file_path.replace(".rels", ".tok")
-
-        tok_conll_mapping = mapping(
-            io.open(tok_file_path, encoding="utf-8").read().split("\n"),
-            io.open(conll_file_path, encoding="utf-8").read().split("\n"),
-        )
-        doc_of_sents = get_sents(io.open(conll_file_path, encoding="utf-8").read().split("\n"))
-
-        non_seen_doc = []
-        seen = {}
-        docs = {}
-        with io.open(rels_file_path, "r", encoding="utf-8") as f:
+        with io.open(file_path, "r", encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             for row in reader:
-                doc = row["doc"]
+                # doc = row["doc"]
                 unit1_toks = row["unit1_toks"]
-                unit1_txt = row["unit1_txt"]
-                unit1_sent = row["unit1_sent"]
+                s1_toks = row["s1_toks"]
                 unit2_toks = row["unit2_toks"]
-                unit2_txt = row["unit2_txt"]
-                unit2_sent = row["unit2_sent"]
-                dir = row["dir"]
-                label = row["label"]
+                s2_toks = row["s2_toks"]
 
-                if doc not in doc_of_sents.keys():
-                    non_seen_doc.append(doc)
-                    continue
-                if doc not in docs.keys():
-                    docs[doc] = {"spans": [], "dir": [], "label": []}
-                if doc not in seen.keys():
-                    seen[doc] = []
-                if "," in unit1_toks:
-                    left1, right1 = unit1_toks.split(",")[0], unit1_toks.split(",")[1]
-                    left1_start, left1_end = int(left1.split("-")[0]), int(left1.split("-")[-1])
-                    right1_start, right1_end = int(right1.split("-")[0]), int(right1.split("-")[-1])
+                span_dist = get_span_dist(unit1_toks, unit2_toks)
+                span_dist = abs(span_dist) // 10 + 1         # smooth the distance
+                unit1_span_indices = get_span_indices(unit1_toks, s1_toks, self.max_length)
+                unit2_span_indices = get_span_indices(unit2_toks, s2_toks, self.max_length)
 
-                    if unit1_toks not in seen[doc]:
-                        sent_id1 = tok_conll_mapping[doc][right1_start][0]
-                        doc_of_sents[doc][sent_id1] = merge_spans(
-                            doc, tok_conll_mapping, doc_of_sents, left1_end, right1_start, right1_end
-                        )
-                        seen[doc].append(unit1_toks)
-                    span = (left1_start, right1_end - (right1_start - left1_end + 1))
-                else:
-                    span = (int(unit1_toks.split("-")[0]), int(unit1_toks.split("-")[-1]))
-
-                if "," in unit2_toks:
-                    left2, right2 = unit2_toks.split(",")[0], unit2_toks.split(",")[1]
-                    left2_start, left2_end = int(left2.split("-")[0]), int(left2.split("-")[-1])
-                    right2_start, right2_end = int(right2.split("-")[0]), int(right2.split("-")[-1])
-                    if unit2_toks not in seen[doc]:
-                        sent_id2 = tok_conll_mapping[doc][right2_start][0]
-                        doc_of_sents[doc][sent_id2] = merge_spans(
-                            doc, tok_conll_mapping, doc_of_sents, left2_end, right2_start, right2_end
-                        )
-                        seen[doc].append(unit2_toks)
-                    next_span = (left2_start, right2_end - (right2_start - left2_end + 1))
-                else:
-                    next_span = (int(unit2_toks.split("-")[0]), int(unit2_toks.split("-")[-1]))
-
-                if span not in docs[doc]["spans"]:
-                    docs[doc]["spans"].append(span)
-                docs[doc]["dir"].append((dir, (span, next_span)))
-                docs[doc]["label"].append((label, (span, next_span)))
-
-        for docname, doc_dict in docs.items():
-            yield self.text_to_instance(
-                sentences=doc_of_sents[docname],
-                gold_clusters=[docs[docname]["spans"]],
-                dir=docs[docname]["dir"],
-                label=docs[docname]["label"],
-            )
+                yield self.text_to_instance(
+                    unit1_sent=row["unit1_sent"],
+                    unit2_sent=row["unit2_sent"],
+                    span_dist=span_dist,
+                    unit1_span_indices=unit1_span_indices,
+                    unit2_span_indices=unit2_span_indices,
+                    dir=row["dir"],
+                    label=row["label"],
+                )
