@@ -7,10 +7,6 @@ a dependency syntax parse.
 
 import io, sys, os, copy, re
 
-script_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
-model_dir = "models" + os.sep + "subtree"
-param_dir = "models" + os.sep + "params" + os.sep
-
 from collections import defaultdict, Counter
 from argparse import ArgumentParser
 import numpy as np
@@ -24,11 +20,14 @@ from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
 
 from gumdrop_reader import read_conll_conn
-
-np.random.seed(42)
 import random
 
+np.random.seed(42)
 random.seed(42)
+
+script_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
+model_dir = "models" + os.sep + "subtree"
+param_dir = "models" + os.sep + "params" + os.sep
 
 DEFAULTCLF = XGBClassifier(
     random_state=42, max_depth=50, min_child_weight=1, n_estimators=200, n_jobs=3, verbose=1, learning_rate=0.16
@@ -225,6 +224,7 @@ class SubtreeSegmenter:
         as_text=True,
         multitrain_path=None,
         chosen_clf=DEFAULTCLF,
+        ensemble_json_dir=""
     ):
         """
         :param training_file:
@@ -299,6 +299,19 @@ class SubtreeSegmenter:
             clf.fit(data_x, data_y)
         self.clf = clf
 
+        ensemble_json_path = os.path.join(ensemble_json_dir, self.corpus + ".train.json")
+        os.makedirs(ensemble_json_dir, exist_ok=True)
+        sys.stderr.write("o Dumping predictions to " + ensemble_json_path)
+        from json import dumps
+        with io.open(ensemble_json_path, "w", newline="\n") as f:
+            probas = clf.predict_proba(data_x)
+            output = []
+            for p in probas:
+                output.append({"B": p[1], "I": 0.0, "O": p[0]})
+            probas = output
+            for d in probas:
+                f.write(dumps({k: float(v) for k, v in d.items()}) + "\n")
+
         feature_names = cat_labels + num_labels
         sys.stderr.write("o Using " + str(len(feature_names)) + " features\n")
 
@@ -324,7 +337,7 @@ class SubtreeSegmenter:
         preds = [(int(pr.split()[0]), float(pr.split()[1])) for pr in pairs if "\t" in pr]
         return preds
 
-    def predict(self, infile, ensemble_json_dir="", eval_gold=False, as_text=True):
+    def predict(self, infile, ensemble_json_dir="", eval_gold=False, as_text=True, split=None):
         """
         Predict sentence splits using an existing model
 
@@ -416,7 +429,7 @@ class SubtreeSegmenter:
                 preds[i] = 1
 
         # self.name + self.auto + "_" +
-        ensemble_json_path = os.path.join(ensemble_json_dir, self.corpus + ".json")
+        ensemble_json_path = os.path.join(ensemble_json_dir, self.corpus + (f".{split}" if split else "") + ".json")
         os.makedirs(ensemble_json_dir, exist_ok=True)
         sys.stderr.write("o Dumping predictions to " + ensemble_json_path)
         from json import dumps
@@ -637,7 +650,7 @@ class SubtreeSegmenter:
         wrapped.append(copy.deepcopy(data[1]))
         data = wrapped
 
-        for i in range(2, len(data) - 2):
+        for i in range(3 if dummies else 2, len(data) - (3 if dummies else 2)):
             tok = data[i]
             prev_prev = data[i - 2]
             prev = data[i - 1]
@@ -799,6 +812,7 @@ if __name__ == "__main__":
                 chosen_feats=feats,
                 clf_params=params,
                 chosen_clf=best_clf,
+                ensemble_json_dir=opts.ensemble_json_dir
             )
         if "test" in opts.mode:
             if opts.multitrain_path is not None:
@@ -807,9 +821,9 @@ if __name__ == "__main__":
             else:
                 # Get prediction performance on dev
                 if opts.eval_test:
-                    conf_mat, prec, rec, f1 = seg.predict(test, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir)
+                    conf_mat, prec, rec, f1 = seg.predict(test, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir, split="test")
                 else:
-                    conf_mat, prec, rec, f1 = seg.predict(dev, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir)
+                    conf_mat, prec, rec, f1 = seg.predict(dev, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir, split="dev")
                     if (
                         best_params is not None and "optimize" in opts.mode
                     ):  # For optimization check if this is a new best score

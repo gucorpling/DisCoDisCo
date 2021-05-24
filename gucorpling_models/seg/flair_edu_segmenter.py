@@ -11,6 +11,8 @@ import flair
 import os, sys, io, numpy as np
 from random import seed, shuffle
 
+from torch.utils.data import Dataset
+
 seed(42)
 np.random.seed(42)
 
@@ -54,10 +56,6 @@ class FlairEDUSplitter:
 
         path = data_dir + "best-model.pt"
         self.model = SequenceTagger.load(path)
-
-    def test_dependencies(self):
-        # Check we have flair
-        import flair
 
     def make_flair_data(self, multitrain=False):
         def conll2sents(conll):
@@ -146,7 +144,7 @@ class FlairEDUSplitter:
 
             return fold_ids
 
-    def train(self, training_dir=None, multitrain=False):
+    def train(self, training_dir=None, multitrain=False, ensemble_json_dir=None):
 
         from flair.trainers import ModelTrainer
 
@@ -233,6 +231,13 @@ class FlairEDUSplitter:
             )
             self.model = tagger
 
+            conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_train.conll"
+            with open(conll_file, 'r') as f:
+                self.predict(f.read(), ensemble_json_dir=ensemble_json_dir, split="train")
+            conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_dev.conll"
+            with open(conll_file, 'r') as f:
+                self.predict(f.read(), ensemble_json_dir=ensemble_json_dir, split="dev")
+
             if multitrain:
                 conll_test = io.open(
                     data_dir + self.corpus + "_train_fold" + str(i + 1) + ".conll", encoding="utf8"
@@ -269,7 +274,7 @@ class FlairEDUSplitter:
         preds = [(int(pr.split()[0]), float(pr.split()[1])) for pr in pairs if "\t" in pr]
         return preds
 
-    def predict(self, conll_in, eval_gold=False, as_text=True, ensemble_json_dir=None):
+    def predict(self, conll_in, eval_gold=False, as_text=True, ensemble_json_dir=None, split=None):
 
         if self.model is None:
             self.load_model()
@@ -342,7 +347,7 @@ class FlairEDUSplitter:
         # write to json format per token
         if ensemble_json_dir is not None:
             os.makedirs(ensemble_json_dir, exist_ok=True)
-            with io.open(ensemble_json_dir + os.sep + self.corpus + ".json", "w", newline="\n") as fout:
+            with io.open(ensemble_json_dir + os.sep + self.corpus + (f".{split}" if split is not None else "") + ".json", "w", newline="\n") as fout:
                 for d in output_json_format:
                     fout.write(dumps({k: float(v) for k, v in d.items()}) + "\n")
 
@@ -367,7 +372,7 @@ if __name__ == "__main__":
 
     splitter = FlairEDUSplitter(corpus=opts.corpus)
     if opts.mode == "train":
-        splitter.train(multitrain=opts.multitrain)
+        splitter.train(multitrain=opts.multitrain, ensemble_json_dir=opts.ensemble_json_dir)
     elif opts.mode == "multitrain":
         splitter = FlairEDUSplitter(corpus=opts.corpus, model_path=data_dir + "best-model.pt")
         conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_train.conll"
@@ -387,7 +392,7 @@ if __name__ == "__main__":
     else:
         conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_test.conll"
         conll = io.open(conll_file, encoding="utf8").read()
-        preds = splitter.predict(conll, ensemble_json_dir=opts.ensemble_json_dir)
+        preds = splitter.predict(conll, ensemble_json_dir=opts.ensemble_json_dir, split="test")
         preds = list(preds)
         output = []
         tok_num = 0
