@@ -2,9 +2,10 @@ import io
 import os
 from collections import defaultdict
 
-# the following directory should only containing data folders:
-DATA_DIR = "../../sharedtask2019/data/"
-OUT_DIR = "output_data/"
+
+# the following directory should "only" containing data folders:
+DATA_DIR = '../../data/DISRPT2019/'
+OUT_DIR = '../../data/DISRPT2019-output_data/'
 
 if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)

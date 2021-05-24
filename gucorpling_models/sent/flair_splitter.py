@@ -1,6 +1,14 @@
 from flair.data import Corpus, Sentence
 from flair.datasets import ColumnCorpus
-from flair.embeddings import StackedEmbeddings, FlairEmbeddings, CharacterEmbeddings, WordEmbeddings, BertEmbeddings
+
+from flair.embeddings import (
+    StackedEmbeddings,
+    FlairEmbeddings,
+    CharacterEmbeddings,
+    WordEmbeddings,
+    TransformerWordEmbeddings
+)
+
 from flair.models import SequenceTagger
 import flair
 
@@ -181,6 +189,7 @@ class FlairSentSplitter:
 
     def train(self, training_dir):
         from flair.trainers import ModelTrainer
+        print(training_dir)
 
         # define columns
         columns = {0: "text", 1: "ner"}
@@ -210,7 +219,8 @@ class FlairSentSplitter:
             # comment in these lines to use flair embeddings
             # FlairEmbeddings("news-forward"),
             # FlairEmbeddings("news-backward"),
-            BertEmbeddings("bert-base-multilingual-cased"),
+            TransformerWordEmbeddings('bert-base-multilingual-cased'),
+            TransformerWordEmbeddings('bert-base-cased'),
         ]
 
         embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
@@ -424,8 +434,8 @@ if __name__ == "__main__":
     sentencer = FlairSentSplitter()
     if opts.mode == "train":
         from glob import glob
-
-        folders = glob(opts.file)
+        folders = glob(opts.file+'*/')
+        #import pdb; pdb.set_trace();
         for data_dir in folders:
             sentencer.train(data_dir)
     else:
