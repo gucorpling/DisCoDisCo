@@ -99,6 +99,7 @@ class E2eResolver(Model):
         self.dropout(combined)
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)
+        relation_logits = F.relu(relation_logits)
 
         output = {
             "relation_logits": relation_logits,

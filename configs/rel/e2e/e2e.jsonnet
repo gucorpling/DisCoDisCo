@@ -1,4 +1,4 @@
-local transformer_model_name = "distilbert-base-uncased";
+local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local max_length = 128;
 local feature_size = 30;
 local max_span_width = 60;
@@ -21,8 +21,8 @@ local span_pair_embedding_dim = 3 * span_embedding_dim + feature_size;
             "model_name": transformer_model_name
         }
     },
-  "train_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
-  "validation_data_path": "sharedtask2021/data/eng.rst.gum/eng.rst.gum_dev.rels",
+  "train_data_path": std.extVar("TRAIN_DATA_PATH"),
+  "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
   "model": {
     "type": "disrpt_2021_e2e",
     "text_field_embedder": {
@@ -76,7 +76,7 @@ local span_pair_embedding_dim = 3 * span_embedding_dim + feature_size;
         "shuffle": true
     },
   "trainer": {
-    "num_epochs": 40,
+    "num_epochs": 1,
     "patience" : 10,
     "learning_rate_scheduler": {
       "type": "slanted_triangular",

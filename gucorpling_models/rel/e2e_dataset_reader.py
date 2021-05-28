@@ -133,6 +133,9 @@ class Disrpt2021RelReader(DatasetReader):
     def _read(self, file_path: str) -> Iterable[Instance]:
         assert file_path.endswith(".rels")
 
+        with open('bug.txt', 'a', encoding='utf-8') as f:
+            f.write('\n\n' + file_path.split('/')[-2] + '\n')
+
         with io.open(file_path, "r", encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             for row in reader:
@@ -147,12 +150,17 @@ class Disrpt2021RelReader(DatasetReader):
                 unit1_span_indices = get_span_indices(unit1_toks, s1_toks, self.max_length)
                 unit2_span_indices = get_span_indices(unit2_toks, s2_toks, self.max_length)
 
-                yield self.text_to_instance(
-                    unit1_sent=row["unit1_sent"],
-                    unit2_sent=row["unit2_sent"],
-                    span_dist=span_dist,
-                    unit1_span_indices=unit1_span_indices,
-                    unit2_span_indices=unit2_span_indices,
-                    dir=row["dir"],
-                    label=row["label"],
-                )
+                try:
+                    yield self.text_to_instance(
+                        unit1_sent=row["unit1_sent"],
+                        unit2_sent=row["unit2_sent"],
+                        span_dist=span_dist,
+                        unit1_span_indices=unit1_span_indices,
+                        unit2_span_indices=unit2_span_indices,
+                        dir=row["dir"],
+                        label=row["label"],
+                    )
+                except:
+                    with open('bug.txt', 'a', encoding='utf-8') as f:
+                        f.write(str(row) + '\n')
+                    continue
