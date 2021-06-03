@@ -219,7 +219,7 @@ class FlairSentSplitter:
             # comment in these lines to use flair embeddings
             # FlairEmbeddings("news-forward"),
             # FlairEmbeddings("news-backward"),
-            TransformerWordEmbeddings('bert-base-multilingual-cased'),
+            TransformerWordEmbeddings('distilbert-base-multilingual-cased'),
             TransformerWordEmbeddings('bert-base-cased'),
         ]
 
@@ -235,7 +235,7 @@ class FlairSentSplitter:
 
         trainer: ModelTrainer = ModelTrainer(tagger, corpus)
 
-        trainer.train(training_dir, learning_rate=0.1, mini_batch_size=16, max_epochs=30)
+        trainer.train(training_dir, learning_rate=0.1, mini_batch_size=32, max_epochs=30)
         self.model = tagger
 
     def predict(self, tt_sgml, outmode="binary"):
