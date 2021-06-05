@@ -21,20 +21,25 @@ def get_span_indices(unit_toks, s_toks, max_length: None):
     s_start, s_end = int(s_toks.split("-")[0]), int(s_toks.split("-")[-1])
 
     if "," in unit_toks:
-        left, right = unit_toks.split(",")[0], unit_toks.split(",")[1]
-        left_start, left_end = int(left.split("-")[0]) - s_start, int(left.split("-")[-1]) - s_start
-        right_start, right_end = int(right.split("-")[0])-s_start, int(right.split("-")[-1])-s_start
+        splitted = unit_toks.split(",")
+        if len(splitted) > 2:
+            a = 1
+        cur_span = []
+        span = []
+        for chunk in splitted:
+            s, e = int(chunk.split("-")[0]) - s_start, int(chunk.split("-")[-1]) - s_start
+            cur_span.append((s, e))
+
         if max_length:
-            if max_length >= left_end:
-                left_end = max_length - 1
-                span = [(left_start, left_end)]
-            elif max_length >= right_start:
-                span = [(left_start, left_end)]
-            elif max_length >= right_end:
-                right_end = max_length - 1
-                span = [(left_start, left_end), (right_start, right_end)]
-        else:
-            span = [(left_start, left_end), (right_start, right_end)]
+            for chunk in cur_span:
+                s, e = chunk[0], chunk[1]
+                if s >= max_length:
+                    continue
+                elif e >= max_length:
+                    span.append((s, e-1))
+                    continue
+                else:
+                    span.append((s, e))
     else:
         left, right = int(unit_toks.split("-")[0])-s_start, int(unit_toks.split("-")[-1])-s_start
         if max_length and right >= max_length:
@@ -118,9 +123,10 @@ class Disrpt2021RelReader(DatasetReader):
         # unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
 
         fields: Dict[str, Field] = {
-            "sentences": TextField(sent_tokens, self.token_indexers),
-            "unit1_span_mask": TensorField(torch.tensor(adjusted_unit1_span_mask) > 0),
-            "unit2_span_mask": TensorField(torch.tensor(adjusted_unit2_span_mask) > 0),
+            "sentence1": TextField(unit1_sent_tokens[:self.max_length], self.token_indexers),
+            "sentence2": TextField(unit2_sent_tokens[:self.max_length], self.token_indexers),
+            "unit1_span_mask": TensorField(torch.tensor(unit1_span_mask[:self.max_length]) > 0),
+            "unit2_span_mask": TensorField(torch.tensor(unit2_span_mask[:self.max_length]) > 0),
             "direction": LabelField(dir, label_namespace="direction_labels"),
             "distance": TensorField(torch.tensor(span_dist))
         }
@@ -146,21 +152,21 @@ class Disrpt2021RelReader(DatasetReader):
                 s2_toks = row["s2_toks"]
 
                 span_dist = get_span_dist(unit1_toks, unit2_toks)
-                span_dist = abs(span_dist) // 10 + 1         # smooth the distance
+                span_dist = round(math.log(abs(span_dist), 2))   # smooth the distance
                 unit1_span_indices = get_span_indices(unit1_toks, s1_toks, self.max_length)
                 unit2_span_indices = get_span_indices(unit2_toks, s2_toks, self.max_length)
 
-                try:
-                    yield self.text_to_instance(
-                        unit1_sent=row["unit1_sent"],
-                        unit2_sent=row["unit2_sent"],
-                        span_dist=span_dist,
-                        unit1_span_indices=unit1_span_indices,
-                        unit2_span_indices=unit2_span_indices,
-                        dir=row["dir"],
-                        label=row["label"],
-                    )
-                except:
-                    with open('bug.txt', 'a', encoding='utf-8') as f:
-                        f.write(str(row) + '\n')
-                    continue
+                # try:
+                yield self.text_to_instance(
+                    unit1_sent=row["unit1_sent"],
+                    unit2_sent=row["unit2_sent"],
+                    span_dist=span_dist,
+                    unit1_span_indices=unit1_span_indices,
+                    unit2_span_indices=unit2_span_indices,
+                    dir=row["dir"],
+                    label=row["label"],
+                )
+                # except:
+                #     with open('bug.txt', 'a', encoding='utf-8') as f:
+                #         f.write(str(row) + '\n')
+                #     continue

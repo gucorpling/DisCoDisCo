@@ -49,7 +49,7 @@ class E2eResolver(Model):
             self._lexical_dropout = torch.nn.Dropout(p=lexical_dropout)
         else:
             self._lexical_dropout = lambda x: x
-        self._distance_embedding = torch.nn.Embedding(num_embeddings=150, embedding_dim=feature_size)
+        self._distance_embedding = torch.nn.Embedding(num_embeddings=20, embedding_dim=feature_size)
         self._dir_embedding = torch.nn.Embedding(num_embeddings=2, embedding_dim=1)
 
         num_relations = vocab.get_vocab_size("relation_labels")
@@ -79,7 +79,8 @@ class E2eResolver(Model):
     @overrides
     def forward(
             self,  # type: ignore
-            sentences: TextFieldTensors,
+            sentence1: TextFieldTensors,
+            sentence2: TextFieldTensors,
             unit1_span_mask: torch.Tensor,
             unit2_span_mask: torch.Tensor,
             direction: torch.Tensor,
@@ -87,9 +88,10 @@ class E2eResolver(Model):
             relation: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
 
-        sentences_mask = util.get_text_field_mask(sentences)
-        unit1_span_embeddings = self._get_span_embeddings(sentences, unit1_span_mask, sentences_mask)   # [b, e]
-        unit2_span_embeddings = self._get_span_embeddings(sentences, unit2_span_mask, sentences_mask)   # [b, e]
+        sentence1_mask = util.get_text_field_mask(sentence1)
+        sentence2_mask = util.get_text_field_mask(sentence2)
+        unit1_span_embeddings = self._get_span_embeddings(sentence1, unit1_span_mask, sentence1_mask)   # [b, e]
+        unit2_span_embeddings = self._get_span_embeddings(sentence2, unit2_span_mask, sentence2_mask)   # [b, e]
 
         dist_embeds = self._distance_embedding(distance)
         dir_embeds = self._dir_embedding(direction)

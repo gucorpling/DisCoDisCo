@@ -1,6 +1,6 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local max_length = 128;
-local feature_size = 30;
+local feature_size = 10;
 local max_span_width = 60;
 
 local transformer_dim = 768;  # uniquely determined by transformer_model

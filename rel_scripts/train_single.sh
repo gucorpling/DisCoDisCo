@@ -14,15 +14,15 @@ if [[ ! -d $CORPUS_DIR ]]; then
 	exit 1
 fi
 
-if [[ -d $MODEL_DIR ]]; then
-	echo "\"$MODEL_DIR\" already exists. Removing it now..."
-	rm -rf "$MODEL_DIR"
-fi
+# if [[ -d $MODEL_DIR ]]; then
+# 	echo "\"$MODEL_DIR\" already exists. Removing it now..."
+# 	rm -rf "$MODEL_DIR"
+# fi
 
 # use language-specific berts if we can
 #export EMBEDDING_DIMS=768
 if [[ "$CORPUS" == "eng"* ]]; then
-	export EMBEDDING_MODEL_NAME="bert-base-cased"
+	export EMBEDDING_MODEL_NAME="SpanBERT/spanbert-base-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
 	export EMBEDDING_MODEL_NAME="bert-base-chinese"
 elif [[ "$CORPUS" == "eus"* ]]; then
@@ -44,7 +44,26 @@ echo ""
 export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.rels"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
 echo $TRAIN_DATA_PATH
-allennlp train \
-	configs/rel/e2e/e2e.jsonnet \
-	-s "$MODEL_DIR" \
-#	-o overrides,
+# allennlp train \
+# 	configs/rel/e2e/e2e.jsonnet \
+# 	-s "$MODEL_DIR" \
+
+echo ""
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "# Predicting on ${CORPUS}"
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo ""
+export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
+echo $VALIDATION_DATA_PATH
+allennlp predict \
+        $MODEL_DIR \
+        $VALIDATION_DATA_PATH \
+        --use-dataset-reader \
+        --output-file tmp/predictions_e2e_rel_${CORPUS}.json
+
+echo ""
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "# Evaluating on ${CORPUS}"
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo ""
+python gucorpling_models/rel/e2e_metrics.py tmp/predictions_e2e_rel_${CORPUS}.json
