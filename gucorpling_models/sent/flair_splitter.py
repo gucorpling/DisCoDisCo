@@ -220,7 +220,7 @@ class FlairSentSplitter:
             # FlairEmbeddings("news-forward"),
             # FlairEmbeddings("news-backward"),
             TransformerWordEmbeddings('distilbert-base-multilingual-cased'),
-            TransformerWordEmbeddings('bert-base-cased'),
+            #TransformerWordEmbeddings('bert-base-cased'),
         ]
 
         embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
