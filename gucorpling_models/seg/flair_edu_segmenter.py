@@ -222,8 +222,8 @@ class FlairEDUSplitter:
 
             trainer.train(
                 training_dir,
-                mini_batch_size=16,
-                mini_batch_chunk_size=4,
+                mini_batch_size=4,
+                mini_batch_chunk_size=1,
                 max_epochs=20,
                 embeddings_storage_mode=embeddings_storage_mode,
                 # learning_rate=0.1,
