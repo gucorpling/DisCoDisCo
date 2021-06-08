@@ -729,6 +729,8 @@ class SubtreeSegmenter:
         :return: transformed numerical dataframe
         """
         for idx, column in enumerate(columns):
+            if "_" not in all_encoders_[idx].classes_:
+                all_encoders_[idx].classes_ = np.append(all_encoders_[idx].classes_, ["_"])
             dframe.loc[:, column] = all_encoders_[idx].transform(dframe.loc[:, column].values)
         return dframe
 
