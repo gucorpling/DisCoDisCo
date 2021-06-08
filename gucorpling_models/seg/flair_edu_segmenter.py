@@ -7,6 +7,7 @@ from flair.datasets import ColumnCorpus
 from flair.embeddings import StackedEmbeddings, FlairEmbeddings, CharacterEmbeddings, BertEmbeddings, XLNetEmbeddings
 from flair.models import SequenceTagger
 import flair
+import torch
 
 import os, sys, io, numpy as np
 from random import seed, shuffle
@@ -371,6 +372,10 @@ if __name__ == "__main__":
     shared_task_dir = "data" + os.sep + "2019" + os.sep
 
     splitter = FlairEDUSplitter(corpus=opts.corpus)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print('o The device is: ', device)
+    flair.device = device
+
     if opts.mode == "train":
         splitter.train(multitrain=opts.multitrain, ensemble_json_dir=opts.ensemble_json_dir)
     elif opts.mode == "multitrain":
