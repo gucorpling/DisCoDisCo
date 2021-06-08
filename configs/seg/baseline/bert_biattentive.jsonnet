@@ -2,6 +2,7 @@ local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2 + 300;
 local context_hidden_size = 400;
 local encoder_hidden_dim = 256;
+local cuda_device = 0;
 
 local context_encoder = {
     "type": "lstm",
@@ -119,6 +120,7 @@ local context_encoder = {
         },
         "patience": 7,
         "num_epochs": 60,
+	"cuda_device": cuda_device,
         // probably best to just use loss
         //"validation_metric": "+span_f1"
     }
