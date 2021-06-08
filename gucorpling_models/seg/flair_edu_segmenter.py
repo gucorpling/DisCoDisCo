@@ -145,7 +145,7 @@ class FlairEDUSplitter:
 
             return fold_ids
 
-    def train(self, training_dir=None, multitrain=False, ensemble_json_dir=None):
+    def train(self, training_dir=None, multitrain=False, ensemble_json_dir=None, embeddings_storage_mode='cpu'):
 
         from flair.trainers import ModelTrainer
 
@@ -224,7 +224,7 @@ class FlairEDUSplitter:
                 training_dir,
                 mini_batch_size=16,
                 max_epochs=20,
-                # embeddings_storage_mode="gpu",
+                embeddings_storage_mode=embeddings_storage_mode,
                 # learning_rate=0.1,
                 learning_rate=0.0010,
                 # weight_decay=1e-4
@@ -373,11 +373,13 @@ if __name__ == "__main__":
 
     splitter = FlairEDUSplitter(corpus=opts.corpus)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print('o The device is: ', device)
+    embeddings_storage_mode = 'gpu' if torch.cuda.is_available() else "cpu"
+    print('o The device is: ', device, "; embedding storage mode is: ", embeddings_storage_mode)
     flair.device = device
+    
 
     if opts.mode == "train":
-        splitter.train(multitrain=opts.multitrain, ensemble_json_dir=opts.ensemble_json_dir)
+        splitter.train(multitrain=opts.multitrain, ensemble_json_dir=opts.ensemble_json_dir, embeddings_storage_mode=embeddings_storage_mode)
     elif opts.mode == "multitrain":
         splitter = FlairEDUSplitter(corpus=opts.corpus, model_path=data_dir + "best-model.pt")
         conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_train.conll"
