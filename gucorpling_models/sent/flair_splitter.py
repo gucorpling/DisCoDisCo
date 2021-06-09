@@ -231,6 +231,7 @@ class FlairSentSplitter:
             tag_dictionary=tag_dictionary,
             tag_type=tag_type,
             use_crf=True,
+            use_rnn=True,
         )
 
         trainer: ModelTrainer = ModelTrainer(tagger, corpus)
