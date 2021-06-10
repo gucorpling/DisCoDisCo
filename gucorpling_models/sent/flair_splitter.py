@@ -11,7 +11,7 @@ from flair.embeddings import (
 
 from flair.models import SequenceTagger
 import flair
-
+from torch.optim.adam import Adam
 import os, sys, re, io
 
 from lib.reorder_sgml import reorder
@@ -234,9 +234,9 @@ class FlairSentSplitter:
             use_rnn=True,
         )
 
-        trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+        trainer: ModelTrainer = ModelTrainer(tagger, corpus, optimizer=Adam)
 
-        trainer.train(training_dir, learning_rate=0.1, mini_batch_size=32, max_epochs=30)
+        trainer.train(training_dir, learning_rate=3e-5, mini_batch_size=32, max_epochs=40)
         self.model = tagger
 
     def predict(self, tt_sgml, outmode="binary"):
