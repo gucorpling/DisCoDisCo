@@ -121,6 +121,7 @@ local context_encoder = {
         "patience": 7,
         "num_epochs": 60,
 	"cuda_device": cuda_device,
+	"run_confidence_checks": false,
         // probably best to just use loss
         //"validation_metric": "+span_f1"
     }
