@@ -19,7 +19,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBClassifier
 
-from gumdrop_reader import read_conll_conn
+from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 import random
 
 np.random.seed(42)
