@@ -26,7 +26,7 @@ local context_encoder = {
                 "type": "single_id",
                 "namespace": "fasttext",
             },
-            "token_characters": import "../components/char_indexer.libsonnet"
+            "token_characters": import "../../components/char_indexer.libsonnet"
         },
         "tokenizer": {
             "type": "whitespace"
@@ -49,7 +49,7 @@ local context_encoder = {
                     "trainable": false,
                     "pretrained_file": std.extVar("FASTTEXT_EMBEDDING_FILE")
                 },
-                "token_characters": import "../components/char_embedder.libsonnet"
+                "token_characters": import "../../components/char_embedder.libsonnet"
             }
         },
         // seq2vec encoders for neighbor sentences
