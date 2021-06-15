@@ -12,11 +12,12 @@ from allennlp.modules import (
     TimeDistributed,
     ConditionalRandomField,
     LayerNorm,
+    FeedForward,
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
-from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
+from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper, PytorchTransformer, FeedForwardEncoder
 from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
-from allennlp.nn import InitializerApplicator
+from allennlp.nn import InitializerApplicator, Activation
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
@@ -24,14 +25,12 @@ from gucorpling_models.seg.util import detect_encoding
 from gucorpling_models.seg.features import FEATURES, get_feature_modules
 
 
-@Model.register("disrpt_2021_seg_baseline")
-class Disrpt2021Baseline(Model):
+@Model.register("disrpt_2021_seg_baseline_xform")
+class Disrpt2021BaselineXform(Model):
     """
-    A simple seq2seq baseline for discourse segmentation. It:
-    - embeds the sentence and neighboring sentences
-    - uses a seq2vec encoder for the neighboring sentences
-    - seq2seq encodes the sentence along with categorical features such as POS tags
-    - decodes using a CRF
+    A simple encoder-decoder baseline which embeds all four spans (each unit's sentence and discourse unit),
+    uses a seq2vec encoder to encode each span, and decodes using a simple linear transform
+    for the direction and the relation.
 
     Based in part on https://github.com/allenai/allennlp-models/blob/main/allennlp_models/tagging/models/crf_tagger.py
     """
@@ -40,8 +39,9 @@ class Disrpt2021Baseline(Model):
         self,
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
+        use_feedforward: bool,
         encoder_hidden_dim: int,
-        encoder_recurrent_dropout: float,
+        encoder_dropout: float,
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
         initializer: InitializerApplicator = InitializerApplicator(),
@@ -64,12 +64,33 @@ class Disrpt2021Baseline(Model):
         # encoding --------------------------------------------------
         self.embedder = embedder
         encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
+        if use_feedforward:
+            self.feedforward = FeedForwardEncoder(
+                FeedForward(
+                    encoder_input_dim,
+                    2,
+                    [encoder_hidden_dim * 2, encoder_hidden_dim],
+                    Activation.by_name("relu")(),
+                    dropout=0.4,
+                )
+            )
+        else:
+            self.feedforward = None
         # self.encoder = PytorchSeq2SeqWrapper(
-        #    StackedBidirectionalLstm(
-        #        encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
-        #    )
+        #     StackedBidirectionalLstm(
+        #         encoder_input_dim if not use_feedforward else encoder_hidden_dim,
+        #         encoder_hidden_dim,
+        #         1,
+        #         recurrent_dropout_probability=encoder_dropout,
+        #     )
         # )
-        self.encoder = PytorchTransformer(encoder_input_dim, 1, num_attention_heads=2, positional_encoding="sinusoidal")
+        self.encoder = PytorchTransformer(
+            encoder_input_dim if not use_feedforward else encoder_hidden_dim,
+            1,
+            encoder_hidden_dim,
+            num_attention_heads=4,
+            dropout_prob=encoder_dropout,
+        )
         self.prev_sentence_encoder = prev_sentence_encoder
         self.next_sentence_encoder = next_sentence_encoder
         self.feature_dropout = torch.nn.Dropout(feature_dropout)
@@ -146,6 +167,8 @@ class Disrpt2021Baseline(Model):
             encoder_inputs.append(self._get_combined_feature_tensor(kwargs))
         encoder_input = torch.cat(encoder_inputs, dim=2)
 
+        if self.feedforward:
+            encoder_input = self.feedforward(encoder_input)
         encoded_sequence = self.encoder(encoder_input, mask)
         encoded_sequence = self.dropout(encoded_sequence)
 

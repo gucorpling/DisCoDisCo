@@ -4,8 +4,8 @@ import torch
 import torch.nn.functional as F
 from allennlp.data import Vocabulary, TextFieldTensors
 from allennlp.models import Model
-from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder
-from allennlp.nn import util
+from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, FeedForward
+from allennlp.nn import util, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
 
 
@@ -23,7 +23,9 @@ class Disrpt2021RelBaseline(Model):
         embedder: TextFieldEmbedder,
         encoder1: Seq2VecEncoder,
         encoder2: Seq2VecEncoder,
-        encoder_decoder_dropout: float = 0.4,
+        dropout: float = 0.5,
+        feedforward: FeedForward = None,
+        initializer: InitializerApplicator = None,
     ):
         super().__init__(vocab)
         self.embedder = embedder
@@ -31,13 +33,16 @@ class Disrpt2021RelBaseline(Model):
         self.encoder2 = encoder2
 
         num_relations = vocab.get_vocab_size("relation_labels")
-        self.dropout = torch.nn.Dropout(encoder_decoder_dropout)
+        self.dropout = torch.nn.Dropout(dropout)
 
         # we will decode the concatenated span reprs ...
-        linear_input_size = encoder1.get_output_dim() * 2 + encoder2.get_output_dim() * 2
+        linear_input_size = encoder1.get_output_dim() * 1 + encoder2.get_output_dim() * 1
         # plus the direction label size
         linear_input_size += 1
-        self.relation_decoder = torch.nn.Linear(linear_input_size, num_relations)
+        self.feedforward = feedforward
+        self.relation_decoder = torch.nn.Linear(
+            linear_input_size if self.feedforward is None else self.feedforward.get_output_dim(), num_relations
+        )
 
         # these are stateful objects that keep track of accuracy across an epoch
         self.direction_accuracy = CategoricalAccuracy()
@@ -45,6 +50,9 @@ class Disrpt2021RelBaseline(Model):
 
         # convenience dict mapping relation indices to labels
         self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")
+
+        if initializer:
+            initializer(self)
 
     def forward(  # type: ignore
         self,
@@ -58,23 +66,23 @@ class Disrpt2021RelBaseline(Model):
 
         # Embed the text. Shape: (batch_size, num_tokens, embedding_dim)
         embedded_unit1_body = self.embedder(unit1_body)
-        embedded_unit1_sentence = self.embedder(unit1_sentence)
+        # embedded_unit1_sentence = self.embedder(unit1_sentence)
         embedded_unit2_body = self.embedder(unit2_body)
-        embedded_unit2_sentence = self.embedder(unit2_sentence)
+        # embedded_unit2_sentence = self.embedder(unit2_sentence)
 
         # Encode the text. Shape: (batch_size, encoder_output_dim)
         encoded_unit1_body = self.encoder1(embedded_unit1_body, util.get_text_field_mask(unit1_body))
-        encoded_unit1_sentence = self.encoder1(embedded_unit1_sentence, util.get_text_field_mask(unit1_sentence))
+        # encoded_unit1_sentence = self.encoder1(embedded_unit1_sentence, util.get_text_field_mask(unit1_sentence))
         encoded_unit2_body = self.encoder2(embedded_unit2_body, util.get_text_field_mask(unit2_body))
-        encoded_unit2_sentence = self.encoder2(embedded_unit2_sentence, util.get_text_field_mask(unit2_sentence))
+        # encoded_unit2_sentence = self.encoder2(embedded_unit2_sentence, util.get_text_field_mask(unit2_sentence))
 
         # Concatenate the vectors. Shape: (batch_size, encoder1_output_dim * 2 + encoder2_output_dim * 2 + 1)
         combined = torch.cat(
             (
                 encoded_unit1_body,
-                encoded_unit1_sentence,
+                # encoded_unit1_sentence,
                 encoded_unit2_body,
-                encoded_unit2_sentence,
+                # encoded_unit2_sentence,
                 direction.unsqueeze(-1),
             ),
             1,
@@ -82,6 +90,9 @@ class Disrpt2021RelBaseline(Model):
 
         # Apply dropout
         combined = self.dropout(combined)
+
+        if self.feedforward:
+            combined = self.feedforward(combined)
 
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)

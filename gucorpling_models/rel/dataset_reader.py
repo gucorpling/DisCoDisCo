@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 from typing import Dict, Iterable
 from pprint import pprint
@@ -7,6 +8,8 @@ from allennlp.data import DatasetReader, Instance, Field
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
+
+logger = logging.getLogger(__name__)
 
 
 @DatasetReader.register("disrpt_2021_rel")
@@ -61,6 +64,7 @@ class Disrpt2021RelReader(DatasetReader):
         # tok_file_path = rels_file_path.replace(".rels", ".tok")
 
         with open(rels_file_path, "r") as f:
+            logger.debug("reading " + rels_file_path)
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             # Keys:
             # METADATA
