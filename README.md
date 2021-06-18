@@ -153,6 +153,23 @@ TODO, but see https://guide.allennlp.org/using-config-files/
 TODO, but for now see [baseline_model](gucorpling_models/rel/baseline_model.py)
 
 
+### Relation Classification
+
+You can directly run the bash scripts to train and predict. The `train.sh` supports the training, predicting and evaluation across all datasets. To run it, use the following command:
+
+```bash
+bash rel_scripts/train.sh
+```
+
+To run the model on a single dataset, use the following command:
+
+```bash
+bash rel_scripts/train_single.sh CORPUS_NAME MODEL_DIR
+```
+
+The evaluation results and the the prediction json file will be stored in `tmp/`
+
+
 # AllenNLP Template Project using Config Files
 
 A template for starting a new allennlp project using config files and `allennlp train`.  For simple

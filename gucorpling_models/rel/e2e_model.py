@@ -26,14 +26,7 @@ class E2eResolver(Model):
             vocab: Vocabulary,
             text_field_embedder: TextFieldEmbedder,
             context_layer: Seq2SeqEncoder,
-            mention_feedforward: FeedForward,
-            antecedent_feedforward: FeedForward,
             feature_size: int,
-            max_span_width: int,
-            spans_per_word: float,
-            max_antecedents: int,
-            coarse_to_fine: bool = False,
-            inference_order: int = 1,
             lexical_dropout: float = 0.2,
             encoder_decoder_dropout: float = 0.3,
             initializer: InitializerApplicator = InitializerApplicator(),
@@ -54,7 +47,7 @@ class E2eResolver(Model):
 
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(encoder_decoder_dropout)
-        self.relation_decoder = torch.nn.Linear(context_layer.get_output_dim()*2+feature_size+1, num_relations)
+        self.relation_decoder = torch.nn.Linear(context_layer.get_output_dim()*6+feature_size+1, num_relations)
 
         # these are stateful objects that keep track of accuracy across an epoch
         self.direction_accuracy = CategoricalAccuracy()
@@ -64,11 +57,21 @@ class E2eResolver(Model):
         self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")
         initializer(self)
 
-    def _get_span_embeddings(self, unit_sentence, unit_span_mask, unit_sentence_mask):
-        embedded_unit_sentence = self._lexical_dropout(self._text_field_embedder(unit_sentence))
-        assert unit_span_mask.size(1) == embedded_unit_sentence.size(1)
-        contextualized_unit_sentence = self._context_layer(embedded_unit_sentence, unit_sentence_mask)
+    def _get_end_points_enmbeddings(self, contextualized_unit_sentence, unit_span_indices):
+        unit_span_indices = unit_span_indices.tolist()
 
+        out_start, out_end = [], []
+        for i, span in enumerate(unit_span_indices):
+            start_idx, end_idx = span[0][0], span[-1][-1]
+            cur_start_embedding = torch.unsqueeze(contextualized_unit_sentence[i][start_idx], 0)
+            cur_end_embedding = torch.unsqueeze(contextualized_unit_sentence[i][end_idx], 0)
+            out_start.append(cur_start_embedding)
+            out_end.append(cur_end_embedding)
+        start_embeddings = torch.cat(out_start, dim=0)
+        end_embeddings = torch.cat(out_end, dim=0)
+        return start_embeddings, end_embeddings
+
+    def _get_span_embeddings(self, contextualized_unit_sentence, unit_span_mask):
         att_logits = self._global_attention(contextualized_unit_sentence)    # [b, s, 1]
         att_logits[~unit_span_mask] = float('-inf')
         att_weights = F.softmax(att_logits, 1)  # [b, s, 1]
@@ -76,13 +79,24 @@ class E2eResolver(Model):
         weighted_span_embeds = att_span_embeds.sum(dim=1)   # [b, e]
         return weighted_span_embeds
 
+    def _get_span_representations(self, embedded_unit_sentence, unit_span_mask, unit_span_indices, unit_sentence_mask):
+        assert unit_span_mask.size(1) == embedded_unit_sentence.size(1)
+        contextualized_unit_sentence = self._context_layer(embedded_unit_sentence, unit_sentence_mask)
+        weighted_span_embeds = self._get_span_embeddings(contextualized_unit_sentence, unit_span_mask)  # [b, e]
+        start_embeddings, end_embeddings = self._get_end_points_enmbeddings(contextualized_unit_sentence, unit_span_indices)    # [b, e]
+        span_representations = torch.cat([start_embeddings, weighted_span_embeds, end_embeddings], 1)   # [b, 3e]
+        return span_representations
+
+
     @overrides
     def forward(
             self,  # type: ignore
             sentence1: TextFieldTensors,
             sentence2: TextFieldTensors,
             unit1_span_mask: torch.Tensor,
+            unit1_span_indices: torch.Tensor,
             unit2_span_mask: torch.Tensor,
+            unit2_span_indices: torch.Tensor,
             direction: torch.Tensor,
             distance: torch.Tensor,
             relation: torch.Tensor = None,
@@ -90,14 +104,18 @@ class E2eResolver(Model):
 
         sentence1_mask = util.get_text_field_mask(sentence1)
         sentence2_mask = util.get_text_field_mask(sentence2)
-        unit1_span_embeddings = self._get_span_embeddings(sentence1, unit1_span_mask, sentence1_mask)   # [b, e]
-        unit2_span_embeddings = self._get_span_embeddings(sentence2, unit2_span_mask, sentence2_mask)   # [b, e]
+
+        embedded_unit1_sentence = self._lexical_dropout(self._text_field_embedder(sentence1))
+        embedded_unit2_sentence = self._lexical_dropout(self._text_field_embedder(sentence2))
+
+        unit1_span_representations = self._get_span_representations(embedded_unit1_sentence, unit1_span_mask, unit1_span_indices, sentence1_mask)   # [b, 3e]
+        unit2_span_representations = self._get_span_representations(embedded_unit2_sentence, unit2_span_mask, unit2_span_indices, sentence2_mask)   # [b, 3e]
 
         dist_embeds = self._distance_embedding(distance)
         dir_embeds = self._dir_embedding(direction)
         feature_embeds = torch.cat((dist_embeds, dir_embeds), -1) # [b, f]
 
-        combined = torch.cat((unit1_span_embeddings, unit2_span_embeddings, feature_embeds), 1) # [b, e*2+f]
+        combined = torch.cat((unit1_span_representations, unit2_span_representations, feature_embeds), 1) # [b, e*2+f]
         self.dropout(combined)
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)

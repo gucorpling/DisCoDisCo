@@ -1,11 +1,9 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
-local max_length = 128;
+local max_length = 512;
 local feature_size = 10;
 local max_span_width = 60;
 
 local transformer_dim = 768;  # uniquely determined by transformer_model
-local span_embedding_dim = 3 * transformer_dim + feature_size;
-local span_pair_embedding_dim = 3 * span_embedding_dim + feature_size;
 
 {
     "dataset_reader" : {
@@ -19,7 +17,9 @@ local span_pair_embedding_dim = 3 * span_embedding_dim + feature_size;
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model_name
-        }
+        },
+        "max_length": 512
+
     },
   "train_data_path": std.extVar("TRAIN_DATA_PATH"),
   "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
@@ -39,20 +39,6 @@ local span_pair_embedding_dim = 3 * span_embedding_dim + feature_size;
         "type": "pass_through",
         "input_dim": transformer_dim
     },
-    "mention_feedforward": {
-        "input_dim": span_embedding_dim,
-        "num_layers": 2,
-        "hidden_dims": 1500,
-        "activations": "relu",
-        "dropout": 0.3
-    },
-    "antecedent_feedforward": {
-        "input_dim": span_pair_embedding_dim,
-        "num_layers": 2,
-        "hidden_dims": 1500,
-        "activations": "relu",
-        "dropout": 0.3
-    },
     "initializer": {
       "regexes": [
         [".*_span_updating_gated_sum.*weight", {"type": "xavier_normal"}],
@@ -65,18 +51,13 @@ local span_pair_embedding_dim = 3 * span_embedding_dim + feature_size;
       ]
     },
     "feature_size": feature_size,
-    "max_span_width": max_span_width,
-    "spans_per_word": 0.4,
-    "max_antecedents": 50,
-    "coarse_to_fine": true,
-    "inference_order": 2
   },
     "data_loader": {
-        "batch_size": 4,
+        "batch_size": 32,
         "shuffle": true
     },
   "trainer": {
-    "num_epochs": 1,
+    "num_epochs": 40,
     "patience" : 10,
     "learning_rate_scheduler": {
       "type": "slanted_triangular",

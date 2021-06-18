@@ -19,31 +19,42 @@ from gucorpling_models.seg.dataset_reader import group_by_sentence
 
 def get_span_indices(unit_toks, s_toks, max_length: None):
     s_start, s_end = int(s_toks.split("-")[0]), int(s_toks.split("-")[-1])
+    # REPLACED_FLAG = False
 
     if "," in unit_toks:
         splitted = unit_toks.split(",")
         if len(splitted) > 2:
             a = 1
-        cur_span = []
+        # cur_span = []
         span = []
         for chunk in splitted:
             s, e = int(chunk.split("-")[0]) - s_start, int(chunk.split("-")[-1]) - s_start
-            cur_span.append((s, e))
+            span.append((s, e))
 
-        if max_length:
-            for chunk in cur_span:
-                s, e = chunk[0], chunk[1]
-                if s >= max_length:
-                    continue
-                elif e >= max_length:
-                    span.append((s, e-1))
-                    continue
-                else:
-                    span.append((s, e))
+        # if max_length and cur_span[-1][-1] >= max_length:
+        #     REPLACED_FLAG = True
+        #     start_idx = cur_span[0][0]
+        # else:
+        #     start_idx = 0
+        # for chunk in cur_span:
+        #     s, e = chunk[0], chunk[1]
+        #     span.append((s-start_idx, e-start_idx))
+            # if s >= max_length:
+            #     continue
+            # elif e >= max_length:
+            #     span.append((s, e-1))
+            #     continue
+            # else:
+            #     span.append((s, e))
+        # a = 1
     else:
         left, right = int(unit_toks.split("-")[0])-s_start, int(unit_toks.split("-")[-1])-s_start
-        if max_length and right >= max_length:
-            right = max_length - 1
+        # if max_length and right >= max_length:
+        #     REPLACED_FLAG = True
+        #     start_idx = left
+        # else:
+        #     start_idx = 0
+        # span = [(left-start_idx, right-start_idx)] if right-start_idx < max_length else [(left-start_idx, max_length-2)]
         span = [(left, right)]
     return span
 
@@ -52,8 +63,6 @@ def get_span_dist(unit1, unit2):
     unit1_start_indice = int(unit1.split(",")[0].split("-")[0])
     unit2_start_indice = int(unit2.split(",")[0].split("-")[0])
     return unit1_start_indice-unit2_start_indice
-
-
 
 
 @DatasetReader.register("disrpt_2021_rel_e2e")
@@ -78,25 +87,44 @@ class Disrpt2021RelReader(DatasetReader):
         tokenized_text = [Token('[CLS]')]
         for i, word in enumerate(text.split(' ')):
             tokenized = self.tokenizer.tokenize(word)
-            if self.max_length and i >= self.max_length:
-                break
+            # if self.max_length and i >= self.max_length:
+            #     break
             tokenized_text += tokenized[1:-1]
+            # if self.max_length and len(tokenized_text) >= self.max_length - 1:
+            #     break
             subtoken_map += [i+1] * (len(tokenized)-2)
             token_to_subtokens[i] = (count, count+len(tokenized)-3)
             count += len(tokenized)-2
-        tokenized_text.append(Token('[SEP]'))
-        subtoken_map.append(len(subtoken_map))
+        tokenized_text += [Token('[SEP]')]
+        subtoken_map.append(subtoken_map[-1] + 1)
 
-        span_mask = [0] * len(tokenized_text)
-        for i, s in enumerate(span):
-            s_start, s_end = s
-            new_start, new_end = token_to_subtokens[s_start][0], token_to_subtokens[s_end][-1]
-            span[i] = (new_start, new_end)
-            for x in range(new_start, new_end+1):
-                span_mask[x] = 1
+        # if span is larger than the max length, only use the EDU text
+        # span starts from 0 and subtoken_map starts from 1
+        if span[-1][-1]+1 not in subtoken_map[:self.max_length]:
+            tokenized_span = [Token('[CLS]')]
+            for i,s in enumerate(span):
+                tokenized_span += tokenized_text[token_to_subtokens[s[0]][0]:token_to_subtokens[s[1]][-1]+1]
+                a = 1
+            tokenized_span += [Token('[SEP]')]
+            tokenized_text = tokenized_span
 
-        assert len(subtoken_map) == len(tokenized_text)
-        return tokenized_text, span, span_mask
+            span_mask = [1] * len(tokenized_text)
+            span_mask[0], span_mask[-1] = 0, 0
+            span = [(1, 511)] if len(tokenized_text) > self.max_length else [(1, len(tokenized_text)-2)]
+
+        # otherwise use the sentence text
+        else:
+            span_mask = [0] * len(tokenized_text)
+
+            for i, s in enumerate(span):
+                s_start, s_end = s
+                new_start, new_end = token_to_subtokens[s_start][0], token_to_subtokens[s_end][-1]
+                span[i] = (new_start, new_end)
+                for x in range(new_start, new_end+1):
+                    span_mask[x] = 1
+            assert len(subtoken_map) == len(tokenized_text)
+
+        return tokenized_text[:self.max_length], span, span_mask[:self.max_length]
 
     @overrides
     def text_to_instance(
@@ -115,9 +143,9 @@ class Disrpt2021RelReader(DatasetReader):
         unit1_sent_tokens, new_unit1_span_indices, unit1_span_mask = self.tokenize_with_subtoken_map(unit1_sent, unit1_span_indices)
         unit2_sent_tokens, new_unit2_span_indices, unit2_span_mask = self.tokenize_with_subtoken_map(unit2_sent, unit2_span_indices)
 
-        sent_tokens = unit1_sent_tokens + unit2_sent_tokens[1:]
-        adjusted_unit1_span_mask = unit1_span_mask + [0] * (len(unit2_span_mask)-1)
-        adjusted_unit2_span_mask = [0] * len(unit1_span_mask) + unit2_span_mask[1:]
+        # sent_tokens = unit1_sent_tokens + unit2_sent_tokens[1:]
+        # adjusted_unit1_span_mask = unit1_span_mask + [0] * (len(unit2_span_mask)-1)
+        # adjusted_unit2_span_mask = [0] * len(unit1_span_mask) + unit2_span_mask[1:]
 
         # unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
         # unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
@@ -126,7 +154,9 @@ class Disrpt2021RelReader(DatasetReader):
             "sentence1": TextField(unit1_sent_tokens[:self.max_length], self.token_indexers),
             "sentence2": TextField(unit2_sent_tokens[:self.max_length], self.token_indexers),
             "unit1_span_mask": TensorField(torch.tensor(unit1_span_mask[:self.max_length]) > 0),
+            "unit1_span_indices": TensorField(torch.tensor(new_unit1_span_indices)),
             "unit2_span_mask": TensorField(torch.tensor(unit2_span_mask[:self.max_length]) > 0),
+            "unit2_span_indices": TensorField(torch.tensor(new_unit2_span_indices)),
             "direction": LabelField(dir, label_namespace="direction_labels"),
             "distance": TensorField(torch.tensor(span_dist))
         }
@@ -139,9 +169,6 @@ class Disrpt2021RelReader(DatasetReader):
     def _read(self, file_path: str) -> Iterable[Instance]:
         assert file_path.endswith(".rels")
 
-        with open('bug.txt', 'a', encoding='utf-8') as f:
-            f.write('\n\n' + file_path.split('/')[-2] + '\n')
-
         with io.open(file_path, "r", encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             for row in reader:
@@ -152,7 +179,7 @@ class Disrpt2021RelReader(DatasetReader):
                 s2_toks = row["s2_toks"]
 
                 span_dist = get_span_dist(unit1_toks, unit2_toks)
-                span_dist = round(math.log(abs(span_dist), 2))   # smooth the distance
+                span_dist = round(math.log(abs(span_dist)+1, 2))   # smooth the distance
                 unit1_span_indices = get_span_indices(unit1_toks, s1_toks, self.max_length)
                 unit2_span_indices = get_span_indices(unit2_toks, s2_toks, self.max_length)
 
