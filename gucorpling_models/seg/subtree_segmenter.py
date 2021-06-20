@@ -224,7 +224,7 @@ class SubtreeSegmenter:
         as_text=True,
         multitrain_path=None,
         chosen_clf=DEFAULTCLF,
-        ensemble_json_dir=""
+        ensemble_json_dir="",
     ):
         """
         :param training_file:
@@ -303,6 +303,7 @@ class SubtreeSegmenter:
         os.makedirs(ensemble_json_dir, exist_ok=True)
         sys.stderr.write("o Dumping predictions to " + ensemble_json_path)
         from json import dumps
+
         with io.open(ensemble_json_path, "w", newline="\n") as f:
             probas = clf.predict_proba(data_x)
             output = []
@@ -329,11 +330,7 @@ class SubtreeSegmenter:
         joblib.dump((clf, num_labels, cat_labels, multicol_dict, top_n_words, firsts, lasts), self.model, compress=3)
 
     def predict_cached(self, multitrain_path, train=None):
-        pairs = (
-            io.open(multitrain_path + os.sep + self.name + self.auto + "_" + self.corpus)
-            .read()
-            .split("\n")
-        )
+        pairs = io.open(multitrain_path + os.sep + self.name + self.auto + "_" + self.corpus).read().split("\n")
         preds = [(int(pr.split()[0]), float(pr.split()[1])) for pr in pairs if "\t" in pr]
         return preds
 
@@ -814,7 +811,7 @@ if __name__ == "__main__":
                 chosen_feats=feats,
                 clf_params=params,
                 chosen_clf=best_clf,
-                ensemble_json_dir=opts.ensemble_json_dir
+                ensemble_json_dir=opts.ensemble_json_dir,
             )
         if "test" in opts.mode:
             if opts.multitrain_path is not None:
@@ -823,9 +820,13 @@ if __name__ == "__main__":
             else:
                 # Get prediction performance on dev
                 if opts.eval_test:
-                    conf_mat, prec, rec, f1 = seg.predict(test, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir, split="test")
+                    conf_mat, prec, rec, f1 = seg.predict(
+                        test, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir, split="test"
+                    )
                 else:
-                    conf_mat, prec, rec, f1 = seg.predict(dev, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir, split="dev")
+                    conf_mat, prec, rec, f1 = seg.predict(
+                        dev, eval_gold=True, as_text=False, ensemble_json_dir=opts.ensemble_json_dir, split="dev"
+                    )
                     if (
                         best_params is not None and "optimize" in opts.mode
                     ):  # For optimization check if this is a new best score

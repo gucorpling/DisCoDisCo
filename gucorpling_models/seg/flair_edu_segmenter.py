@@ -145,7 +145,7 @@ class FlairEDUSplitter:
 
             return fold_ids
 
-    def train(self, training_dir=None, multitrain=False, ensemble_json_dir=None, embeddings_storage_mode='cpu'):
+    def train(self, training_dir=None, multitrain=False, ensemble_json_dir=None, embeddings_storage_mode="cpu"):
 
         from flair.trainers import ModelTrainer
 
@@ -234,10 +234,10 @@ class FlairEDUSplitter:
             self.model = tagger
 
             conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_train.conll"
-            with open(conll_file, 'r') as f:
+            with open(conll_file, "r") as f:
                 self.predict(f.read(), ensemble_json_dir=ensemble_json_dir, split="train")
             conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_dev.conll"
-            with open(conll_file, 'r') as f:
+            with open(conll_file, "r") as f:
                 self.predict(f.read(), ensemble_json_dir=ensemble_json_dir, split="dev")
 
             if multitrain:
@@ -349,7 +349,11 @@ class FlairEDUSplitter:
         # write to json format per token
         if ensemble_json_dir is not None:
             os.makedirs(ensemble_json_dir, exist_ok=True)
-            with io.open(ensemble_json_dir + os.sep + self.corpus + (f".{split}" if split is not None else "") + ".json", "w", newline="\n") as fout:
+            with io.open(
+                ensemble_json_dir + os.sep + self.corpus + (f".{split}" if split is not None else "") + ".json",
+                "w",
+                newline="\n",
+            ) as fout:
                 for d in output_json_format:
                     fout.write(dumps({k: float(v) for k, v in d.items()}) + "\n")
 
@@ -374,13 +378,16 @@ if __name__ == "__main__":
 
     splitter = FlairEDUSplitter(corpus=opts.corpus)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    embeddings_storage_mode = 'gpu' if torch.cuda.is_available() else "cpu"
-    print('o The device is: ', device, "; embedding storage mode is: ", embeddings_storage_mode)
+    embeddings_storage_mode = "gpu" if torch.cuda.is_available() else "cpu"
+    print("o The device is: ", device, "; embedding storage mode is: ", embeddings_storage_mode)
     flair.device = device
-    
 
     if opts.mode == "train":
-        splitter.train(multitrain=opts.multitrain, ensemble_json_dir=opts.ensemble_json_dir, embeddings_storage_mode=embeddings_storage_mode)
+        splitter.train(
+            multitrain=opts.multitrain,
+            ensemble_json_dir=opts.ensemble_json_dir,
+            embeddings_storage_mode=embeddings_storage_mode,
+        )
     elif opts.mode == "multitrain":
         splitter = FlairEDUSplitter(corpus=opts.corpus, model_path=data_dir + "best-model.pt")
         conll_file = shared_task_dir + splitter.corpus + os.sep + splitter.corpus + "_train.conll"

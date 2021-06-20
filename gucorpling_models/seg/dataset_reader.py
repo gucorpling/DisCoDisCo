@@ -14,7 +14,7 @@ from allennlp.data.fields import LabelField, TextField, SequenceLabelField, Meta
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
-from gucorpling_models.seg.features import FEATURES, get_field
+from gucorpling_models.features import get_token_feature_field, TokenFeature
 from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 
 
@@ -72,6 +72,7 @@ class Disrpt2021SegReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         max_tokens: int = None,
         document_boundary_token: str = "@@DOCUMENT_BOUNDARY@@",
+        token_features: Dict[str, TokenFeature] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -79,6 +80,7 @@ class Disrpt2021SegReader(DatasetReader):
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self.max_tokens = max_tokens if max_tokens is not None else sys.maxsize  # useful for BERT
         self.document_boundary_token = document_boundary_token
+        self.token_features = token_features
 
     def apply_token_indexers(self, instance: Instance) -> None:
         instance.fields["sentence"].token_indexers = self.token_indexers  # type: ignore
@@ -91,8 +93,7 @@ class Disrpt2021SegReader(DatasetReader):
         prev_sentence: Optional[str],
         next_sentence: Optional[str],
         labels: List[str],
-        *args,
-        **kwargs,
+        features: Dict[str, Any],
     ) -> Instance:
         if prev_sentence is None:
             prev_sentence = self.document_boundary_token
@@ -122,11 +123,12 @@ class Disrpt2021SegReader(DatasetReader):
         }
 
         # read in handcrafted features
-        for key in FEATURES.keys():
-            if key not in kwargs.keys():
-                raise Exception(f"Categorical feature {key} not found. Sentence:\n  {sentence}")
-            field_data = kwargs[key]
-            fields[key] = get_field(key, field_data, sentence_field)
+        if self.token_features is not None:
+            for feature_name, token_feature in self.token_features.items():
+                if feature_name not in features.keys():
+                    raise Exception(f"Feature {feature_name} not found. Sentence:\n  {sentence}")
+                feature_data = features[feature_name]
+                fields[feature_name] = get_token_feature_field(token_feature, feature_data, sentence_field)
 
         if labels:
             fields["labels"] = SequenceLabelField(labels, sentence_field)
@@ -149,10 +151,10 @@ class Disrpt2021SegReader(DatasetReader):
         features = [
             {
                 feature_name: [
-                    fdict["deserialize"](td[fdict["source_key"]]) if "deserialize" in fdict else td[fdict["source_key"]]
+                    fdict.deserialize_fn(td[fdict.source_key]) if fdict.deserialize_fn else td[fdict.source_key]
                     for td in sentence
                 ]
-                for feature_name, fdict in FEATURES.items()
+                for feature_name, fdict in (self.token_features.items() if self.token_features else [])
             }
             for sentence in token_dicts_by_sentence
         ]
@@ -171,5 +173,5 @@ class Disrpt2021SegReader(DatasetReader):
                 prev_sentence=prev_sentence,
                 next_sentence=next_sentence,
                 labels=labels,
-                **features[i],
+                features=features[i],
             )

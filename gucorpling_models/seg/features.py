@@ -9,35 +9,6 @@ import torch
 from allennlp.data import Field, Vocabulary
 from allennlp.data.fields import TensorField, TextField, SequenceLabelField, SequenceField, MultiLabelField
 
-
-# class SequenceOneHotLabelField(SequenceLabelField):
-#     """Like a SequenceLabelField, but with labels one-hot encoded"""
-#
-#     def __init__(
-#         self, labels: Union[List[str], List[int]], sequence_field: SequenceField, label_namespace: str = "labels",
-#     ) -> None:
-#         super().__init__(labels, sequence_field, label_namespace)
-#         self._num_labels = None
-#
-#     @overrides
-#     def as_tensor(self, padding_lengths: Dict[str, int]) -> torch.Tensor:
-#         if self._indexed_labels is None:
-#             raise ConfigurationError("You must call .index(vocabulary) on a field before calling .as_tensor()")
-#         desired_num_tokens = padding_lengths["num_tokens"]
-#         padded_tags = pad_sequence_to_length(self._indexed_labels, desired_num_tokens)
-#         tensor = torch.LongTensor([[1 if i == tag else 0 for i in range(self._num_labels)] for tag in padded_tags])
-#         return tensor
-#
-#     @overrides
-#     def index(self, vocab: Vocabulary):
-#         if not self._skip_indexing:
-#             self._indexed_labels = [
-#                 vocab.get_token_index(label, self._label_namespace) for label in self.labels  # type: ignore
-#             ]
-#         if not self._num_labels:
-#             self._num_labels = vocab.get_vocab_size(self._label_namespace)
-
-
 # Each item should have keys:
 # - source_key: key from the token dict returned by the gumdrop code to get the feature data
 # - deserialize (optional): 1-arg function to preprocess a value if needed
