@@ -17,8 +17,8 @@ from allennlp.nn import Activation
 from allennlp.nn.util import get_text_field_mask, masked_softmax, weighted_sum
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
+from gucorpling_models.features import TokenFeature, get_token_feature_modules
 from gucorpling_models.seg.util import detect_encoding
-from gucorpling_models.seg.features import FEATURES, get_feature_modules
 
 
 # Based on: https://tinyurl.com/ztpc7r4z
@@ -34,6 +34,7 @@ class Disrpt2021SegBiattentive(Model):
         next_sentence_encoder: Seq2VecEncoder,
         encoder: Seq2SeqEncoder,
         integrator: Seq2SeqEncoder,
+        token_features: Dict[str, TokenFeature] = None,
         embedding_dropout: float = 0.0,
         encoder_dropout: float = 0.5,
         feature_dropout: float = 0.3,
@@ -48,8 +49,12 @@ class Disrpt2021SegBiattentive(Model):
         num_labels = len(self.labels)
 
         # modules for features
-        feature_modules, feature_dims = get_feature_modules(vocab)
-        self.feature_modules = feature_modules
+        if token_features is not None:
+            feature_modules, feature_dims = get_token_feature_modules(token_features, vocab)
+            self.feature_modules = feature_modules
+        else:
+            self.feature_modules = None
+            feature_dims = 0
 
         # encoding --------------------------------------------------
         self.prev_sentence_encoder = prev_sentence_encoder
@@ -140,7 +145,7 @@ class Disrpt2021SegBiattentive(Model):
 
         # Combine everything we'll be feeding to the encoder
         pre_encoder_inputs = [embedded_sentence, context]
-        if len(FEATURES) > 0:
+        if self.feature_modules is not None:
             pre_encoder_inputs.append(self._get_combined_feature_tensor(kwargs))
         pre_encoder_input = torch.cat(pre_encoder_inputs, dim=2)
         encoder_input = self.pre_encoder_feedforward(pre_encoder_input, mask)

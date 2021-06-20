@@ -13,6 +13,14 @@ local context_encoder = {
     "dropout": 0.2
 };
 
+// handcrafted features
+local token_features = {
+    "pos_tags": {"source_key": "pos", "label_namespace": "upos"},
+    "cpos_tags": {"source_key": "cpos", "label_namespace": "xpos"},
+    "head_distances": {"source_key": "head_dist"},
+    "document_depth": {"source_key": "sent_doc_percentile"}
+};
+
 // For more info on config files generally, see https://guide.allennlp.org/using-config-files
 {
     "dataset_reader" : {
@@ -30,7 +38,8 @@ local context_encoder = {
         },
         "tokenizer": {
             "type": "whitespace"
-        }
+        },
+        "token_features": token_features
     },
     "model": {
         "type": "disrpt_2021_seg_biattentive",
@@ -103,6 +112,7 @@ local context_encoder = {
             //    }
             //]
         },
+        "token_features": token_features,
         "embedding_dropout": 0.2,
         "encoder_dropout": 0.5,
         "feature_dropout": 0.3,
