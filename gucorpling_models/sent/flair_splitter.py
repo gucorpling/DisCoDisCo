@@ -6,7 +6,7 @@ from flair.embeddings import (
     FlairEmbeddings,
     CharacterEmbeddings,
     WordEmbeddings,
-    TransformerWordEmbeddings,
+    TransformerWordEmbeddings
 )
 
 from flair.models import SequenceTagger
@@ -189,7 +189,6 @@ class FlairSentSplitter:
 
     def train(self, training_dir):
         from flair.trainers import ModelTrainer
-
         print(training_dir)
 
         # define columns
@@ -220,8 +219,8 @@ class FlairSentSplitter:
             # comment in these lines to use flair embeddings
             # FlairEmbeddings("news-forward"),
             # FlairEmbeddings("news-backward"),
-            TransformerWordEmbeddings("distilbert-base-multilingual-cased"),
-            # TransformerWordEmbeddings('bert-base-cased'),
+            TransformerWordEmbeddings('distilbert-base-multilingual-cased'),
+            #TransformerWordEmbeddings('bert-base-cased'),
         ]
 
         embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
@@ -237,7 +236,7 @@ class FlairSentSplitter:
 
         trainer: ModelTrainer = ModelTrainer(tagger, corpus, optimizer=Adam)
 
-        trainer.train(training_dir, learning_rate=3e-5, mini_batch_size=32, max_epochs=40)
+        trainer.train(training_dir, learning_rate=3e-2, mini_batch_size=32, max_epochs=40)
         self.model = tagger
 
     def predict(self, tt_sgml, outmode="binary"):
@@ -436,9 +435,8 @@ if __name__ == "__main__":
     sentencer = FlairSentSplitter()
     if opts.mode == "train":
         from glob import glob
-
-        folders = glob(opts.file + "*/")
-        # import pdb; pdb.set_trace();
+        folders = glob(opts.file+'*/')
+        #import pdb; pdb.set_trace();
         for data_dir in folders:
             sentencer.train(data_dir)
     else:

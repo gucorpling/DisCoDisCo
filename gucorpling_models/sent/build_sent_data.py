@@ -4,8 +4,8 @@ from collections import defaultdict
 
 
 # the following directory should "only" containing data folders:
-DATA_DIR = "/home/shabnam/data/codes/data/dstrpt/2019/"
-OUT_DIR = "/home/shabnam/data/codes/data/dstrpt/2019-output/"
+DATA_DIR = '/home/shabnam/data/codes/data/dstrpt/2019/'
+OUT_DIR = '/home/shabnam/data/codes/data/dstrpt/2019-output/'
 
 if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)
