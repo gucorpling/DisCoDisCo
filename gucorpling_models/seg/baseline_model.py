@@ -192,16 +192,9 @@ class Disrpt2021Baseline(Model):
             for metric in self.metrics.values():
                 metric(class_probabilities, labels, mask)
         else:
-            output["loss"] = self._weighted_cross_entropy(label_logits, labels, mask)
+            output["loss"] = sequence_cross_entropy_with_logits(label_logits, labels, mask)
             for metric in self.metrics.values():
                 metric(label_logits, labels, mask)
-
-    def _weighted_cross_entropy(self, logits, labels, mask):
-        # non_o_mask = mask & (labels != self._encoding_map["O"])
-        # o_mask = mask & (labels == self._encoding_map["O"])
-        # weighted_mask = (non_o_mask * self.non_out_tag_weight * mask.float()) + (o_mask * mask.float())
-        # TODO: consider the alpha and gamma parameters here
-        return sequence_cross_entropy_with_logits(logits, labels, mask)  # , gamma=1.5, alpha=0.7)
 
     # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
     # Note that the output dict, because it's just from forward(), represents a batch, not a single
