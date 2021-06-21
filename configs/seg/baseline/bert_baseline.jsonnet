@@ -42,7 +42,7 @@ local token_features = {
         "token_features": token_features
     },
     "model": {
-        "type": "disrpt_2021_seg_biattentive",
+        "type": "disrpt_2021_seg_baseline",
         "embedder": {
             "token_embedders": {
                 "tokens": {
@@ -64,37 +64,21 @@ local token_features = {
         // seq2vec encoders for neighbor sentences
         "prev_sentence_encoder": context_encoder,
         "next_sentence_encoder": context_encoder,
-        "encoder": {
-            "type": "lstm",
-            "input_size": encoder_hidden_dim,
-            "hidden_size": encoder_hidden_dim,
-            "num_layers": 1,
-            "bidirectional": true
-        },
-        "integrator": {
-            "type": "qanet_encoder",
-            "input_dim": encoder_hidden_dim * 3,
-            "hidden_dim": encoder_hidden_dim * 2,
-            "attention_projection_dim": encoder_hidden_dim,
-            "feedforward_hidden_dim": encoder_hidden_dim,
-            "num_blocks": 1,
-            "num_convs_per_block": 3,
-            "conv_kernel_size": 3,
-            "num_attention_heads": 8,
-            "dropout_prob": 0.2,
-            "layer_dropout_undecayed_prob": 0.2,
-            "attention_dropout_prob": 0.2,
-        },
+        // our encoder isn't fully configurable here because its input size needs to be determined
+        // at the start of the program. so, it'll always be a bilstm, but you can use the two items
+        // below to configure the most important hyperparameters it has
+        "encoder_hidden_dim": encoder_hidden_dim,
+        "encoder_recurrent_dropout": 0.0,
+        // end encoder hyperparams
+        "dropout": 0.5,
+        "feature_dropout": 0.0,
         "token_features": token_features,
-        "embedding_dropout": 0.2,
-        "encoder_dropout": 0.5,
-        "feature_dropout": 0.3,
         "use_crf": false
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
     "data_loader": {
-        "batch_size": 32,
+        "batch_size": 16,
         "shuffle": true
     },
     "trainer": {
@@ -105,7 +89,6 @@ local token_features = {
                 [[".*transformer.*"], {"lr": 1e-5}]
             ]
         },
-        "run_confidence_checks": false,
         "patience": 7,
         "num_epochs": 60,
         // probably best to just use loss

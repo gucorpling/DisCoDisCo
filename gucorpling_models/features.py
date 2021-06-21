@@ -2,35 +2,42 @@ import math
 from typing import Tuple, Dict, List, Any
 
 import torch
-from allennlp.common import Params, FromParams, Registrable
-import json
+from allennlp.common import FromParams, Registrable
+import scipy.stats as stats
+
 
 from allennlp.data import Vocabulary, Field
 from allennlp.data.fields import TextField, TensorField, SequenceLabelField
 
 
-class DeserializeFunction(Registrable):
-    def __call__(self, x):
-        raise NotImplementedError("Please use a class that inherits from DeserializeFunction")
+class TransformationFunction(Registrable):
+    def __call__(self, xs):
+        raise NotImplementedError("Please use a class that inherits from TransformationFunction")
 
 
-@DeserializeFunction.register("int")
-class Int(DeserializeFunction):
-    def __call__(self, x):
-        return int(x)
+@TransformationFunction.register("zscore")
+class ZScore(TransformationFunction):
+    def __call__(self, xs):
+        return stats.zscore(xs).tolist()
 
 
-@DeserializeFunction.register("float")
-class Float(DeserializeFunction):
-    def __call__(self, x):
-        return float(x)
+@TransformationFunction.register("natural_log")
+class NaturalLog(TransformationFunction):
+    def __call__(self, xs):
+        return [math.log(x) for x in xs]
+
+
+@TransformationFunction.register("abs_natural_log")
+class NaturalLog(TransformationFunction):
+    def __call__(self, xs):
+        return [math.log(abs(x)) for x in xs]
 
 
 class TokenFeature(FromParams):
-    def __init__(self, source_key: str, label_namespace: str = None, deserialize_fn: DeserializeFunction = None):
+    def __init__(self, source_key: str, label_namespace: str = None, xform_fn: TransformationFunction = None):
         self.source_key = source_key
         self.label_namespace = label_namespace
-        self.deserialize_fn = deserialize_fn
+        self.xform_fn = xform_fn
 
 
 def get_token_feature_field(token_feature: TokenFeature, features: List[Any], sentence: TextField) -> Field:
@@ -49,6 +56,9 @@ def get_token_feature_field(token_feature: TokenFeature, features: List[Any], se
     """
     if not (len(features) == len(sentence.tokens)):
         raise Exception(f"Token-level features must match the number of tokens")
+
+    if token_feature.xform_fn is not None:
+        features = token_feature.xform_fn(features)
 
     py_type = type(features[0])
     if py_type in [int, float]:

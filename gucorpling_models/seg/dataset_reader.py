@@ -150,10 +150,7 @@ class Disrpt2021SegReader(DatasetReader):
         # read handcrafted features provided by gumdrop code
         features = [
             {
-                feature_name: [
-                    fdict.deserialize_fn(td[fdict.source_key]) if fdict.deserialize_fn else td[fdict.source_key]
-                    for td in sentence
-                ]
+                feature_name: [td[fdict.source_key] for td in sentence]
                 for feature_name, fdict in (self.token_features.items() if self.token_features else [])
             }
             for sentence in token_dicts_by_sentence

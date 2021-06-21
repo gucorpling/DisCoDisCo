@@ -69,7 +69,7 @@ export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
 echo $TRAIN_DATA_PATH
 allennlp train \
-  configs/seg/baseline/bert_biattentive.jsonnet \
+  configs/seg/baseline/bert_baseline.jsonnet \
   -s "$MODEL_DIR"
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"

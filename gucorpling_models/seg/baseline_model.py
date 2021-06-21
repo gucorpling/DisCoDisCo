@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Dict, Any, List
 
 import torch
@@ -9,35 +10,43 @@ from allennlp.modules import (
     Seq2SeqEncoder,
     TimeDistributed,
     ConditionalRandomField,
-    FeedForward,
+    LayerNorm,
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
-from allennlp.modules.seq2seq_encoders import FeedForwardEncoder
-from allennlp.nn import Activation
-from allennlp.nn.util import get_text_field_mask, masked_softmax, weighted_sum, sequence_cross_entropy_with_logits
+from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
+from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
+from allennlp.nn import InitializerApplicator
+from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
-from gucorpling_models.features import TokenFeature, get_token_feature_modules
 from gucorpling_models.seg.util import detect_encoding
+from gucorpling_models.features import get_token_feature_modules, TokenFeature
 
 
-# Based on: https://tinyurl.com/ztpc7r4z
-@Model.register("disrpt_2021_seg_biattentive")
-class Disrpt2021SegBiattentive(Model):
-    """"""
+@Model.register("disrpt_2021_seg_baseline")
+class Disrpt2021Baseline(Model):
+    """
+    A simple seq2seq baseline for discourse segmentation. It:
+    - embeds the sentence and neighboring sentences
+    - uses a seq2vec encoder for the neighboring sentences
+    - seq2seq encodes the sentence along with categorical features such as POS tags
+    - decodes using a CRF
+
+    Based in part on https://github.com/allenai/allennlp-models/blob/main/allennlp_models/tagging/models/crf_tagger.py
+    """
 
     def __init__(
         self,
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
+        encoder_hidden_dim: int,
+        encoder_recurrent_dropout: float,
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
-        encoder: Seq2SeqEncoder,
-        integrator: Seq2SeqEncoder,
         use_crf: bool = True,
         token_features: Dict[str, TokenFeature] = None,
-        embedding_dropout: float = 0.0,
-        encoder_dropout: float = 0.5,
+        initializer: InitializerApplicator = InitializerApplicator(),
+        dropout: float = 0.5,
         feature_dropout: float = 0.3,
     ):
         super().__init__(vocab)
@@ -58,25 +67,17 @@ class Disrpt2021SegBiattentive(Model):
             feature_dims = 0
 
         # encoding --------------------------------------------------
+        self.embedder = embedder
+        encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
+        self.encoder = PytorchSeq2SeqWrapper(
+           StackedBidirectionalLstm(
+               encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
+           )
+        )
         self.prev_sentence_encoder = prev_sentence_encoder
         self.next_sentence_encoder = next_sentence_encoder
-        encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
-        self.pre_encoder_feedforward = FeedForwardEncoder(
-            FeedForward(
-                encoder_input_dim,
-                2,
-                [min(1024, encoder.get_input_dim() * 2), min(512, encoder.get_input_dim())],
-                Activation.by_name("relu")(),
-                dropout=0.2,
-            )
-        )
-
-        self.embedder = embedder
-        self.encoder = encoder
-        self.integrator = integrator
-        self.embedding_dropout = torch.nn.Dropout(embedding_dropout)
         self.feature_dropout = torch.nn.Dropout(feature_dropout)
-        self.encoder_dropout = torch.nn.Dropout(encoder_dropout)
+        self.dropout = torch.nn.Dropout(dropout)
 
         # decoding --------------------------------------------------
         hidden_size = self.encoder.get_output_dim()
@@ -97,6 +98,8 @@ class Disrpt2021SegBiattentive(Model):
             "span_f1": SpanBasedF1Measure(vocab, tag_namespace="labels", label_encoding=label_encoding),
             "accuracy": CategoricalAccuracy(),
         }
+
+        initializer(self)
         print(self)
 
     def _get_encoded_context(self, prev_sentence, next_sentence, num_tokens):
@@ -106,9 +109,7 @@ class Disrpt2021SegBiattentive(Model):
         (batch_size, num_toks, context_encoder_hidden_dim * 2) in order to make it easy to combine with the sequence
         """
         embedded_prev_sentence = self.embedder(prev_sentence)
-        embedded_prev_sentence = self.embedding_dropout(embedded_prev_sentence)
         embedded_next_sentence = self.embedder(next_sentence)
-        embedded_next_sentence = self.embedding_dropout(embedded_next_sentence)
         encoded_prev_sentence = self.prev_sentence_encoder(embedded_prev_sentence, get_text_field_mask(prev_sentence))
         encoded_next_sentence = self.next_sentence_encoder(embedded_next_sentence, get_text_field_mask(next_sentence))
         context = torch.cat((encoded_prev_sentence, encoded_next_sentence), 1)
@@ -142,40 +143,20 @@ class Disrpt2021SegBiattentive(Model):
 
         # Encoding --------------------------------------------------
         embedded_sentence = self.embedder(sentence)
-        embedded_sentence = self.embedding_dropout(embedded_sentence)
 
         # Context from neighboring sentences
         context = self._get_encoded_context(prev_sentence, next_sentence, embedded_sentence.shape[1])
 
         # Combine everything we'll be feeding to the encoder
-        pre_encoder_inputs = [embedded_sentence, context]
+        encoder_inputs = [embedded_sentence, context]
         if self.feature_modules is not None:
-            pre_encoder_inputs.append(self._get_combined_feature_tensor(kwargs))
-        pre_encoder_input = torch.cat(pre_encoder_inputs, dim=2)
-        encoder_input = self.pre_encoder_feedforward(pre_encoder_input, mask)
+            encoder_inputs.append(self._get_combined_feature_tensor(kwargs))
+        encoder_input = torch.cat(encoder_inputs, dim=2)
 
-        # First encoder
         encoded_sequence = self.encoder(encoder_input, mask)
-        # attention_logits = encoded_sequence.bmm(encoded_sequence.permute(0, 2, 1).contiguous())
-        # attention_weights = masked_softmax(attention_logits, mask)
-        # biattentive_encoded_sequence = weighted_sum(encoded_sequence, attention_weights)
-
-        # Second encoder
-        integrator_input = torch.cat(
-            [
-                encoder_input,
-                encoded_sequence,
-                # encoded_sequence - biattentive_encoded_sequence,
-                # encoded_sequence * biattentive_encoded_sequence,
-            ],
-            2,
-        )
-        integrated_encodings = self.integrator(integrator_input, mask)
-
-        encoded_sequence = self.encoder_dropout(integrated_encodings)
+        encoded_sequence = self.dropout(encoded_sequence)
 
         # Decoding --------------------------------------------------
-        # project into the label space and use viterbi decoding on the CRF
         label_logits = self.label_projection_layer(encoded_sequence)
         if self.crf:
             # project into the label space and use viterbi decoding on the CRF
@@ -184,6 +165,7 @@ class Disrpt2021SegBiattentive(Model):
             ]
         else:
             pred_labels = torch.argmax(label_logits, dim=2)
+
 
         output = {
             "tokens": sentence_tokens,
@@ -210,9 +192,16 @@ class Disrpt2021SegBiattentive(Model):
             for metric in self.metrics.values():
                 metric(class_probabilities, labels, mask)
         else:
-            output["loss"] = sequence_cross_entropy_with_logits(label_logits, labels, mask)
+            output["loss"] = self._weighted_cross_entropy(label_logits, labels, mask)
             for metric in self.metrics.values():
                 metric(label_logits, labels, mask)
+
+    def _weighted_cross_entropy(self, logits, labels, mask):
+        # non_o_mask = mask & (labels != self._encoding_map["O"])
+        # o_mask = mask & (labels == self._encoding_map["O"])
+        # weighted_mask = (non_o_mask * self.non_out_tag_weight * mask.float()) + (o_mask * mask.float())
+        # TODO: consider the alpha and gamma parameters here
+        return sequence_cross_entropy_with_logits(logits, labels, mask) #, gamma=1.5, alpha=0.7)
 
     # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
     # Note that the output dict, because it's just from forward(), represents a batch, not a single
