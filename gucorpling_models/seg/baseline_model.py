@@ -70,9 +70,9 @@ class Disrpt2021Baseline(Model):
         self.embedder = embedder
         encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
         self.encoder = PytorchSeq2SeqWrapper(
-           StackedBidirectionalLstm(
-               encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
-           )
+            StackedBidirectionalLstm(
+                encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
+            )
         )
         self.prev_sentence_encoder = prev_sentence_encoder
         self.next_sentence_encoder = next_sentence_encoder
@@ -161,11 +161,11 @@ class Disrpt2021Baseline(Model):
         if self.crf:
             # project into the label space and use viterbi decoding on the CRF
             pred_labels = [
-                best_label_seq for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
+                best_label_seq
+                for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
             ]
         else:
             pred_labels = torch.argmax(label_logits, dim=2)
-
 
         output = {
             "tokens": sentence_tokens,
@@ -201,7 +201,7 @@ class Disrpt2021Baseline(Model):
         # o_mask = mask & (labels == self._encoding_map["O"])
         # weighted_mask = (non_o_mask * self.non_out_tag_weight * mask.float()) + (o_mask * mask.float())
         # TODO: consider the alpha and gamma parameters here
-        return sequence_cross_entropy_with_logits(logits, labels, mask) #, gamma=1.5, alpha=0.7)
+        return sequence_cross_entropy_with_logits(logits, labels, mask)  # , gamma=1.5, alpha=0.7)
 
     # Takes output of forward() and turns tensors into strings or probabilities wherever appropriate
     # Note that the output dict, because it's just from forward(), represents a batch, not a single

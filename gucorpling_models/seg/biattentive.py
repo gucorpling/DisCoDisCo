@@ -180,7 +180,8 @@ class Disrpt2021SegBiattentive(Model):
         if self.crf:
             # project into the label space and use viterbi decoding on the CRF
             pred_labels = [
-                best_label_seq for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
+                best_label_seq
+                for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
             ]
         else:
             pred_labels = torch.argmax(label_logits, dim=2)
