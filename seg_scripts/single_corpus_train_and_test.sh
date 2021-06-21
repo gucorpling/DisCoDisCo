@@ -34,6 +34,12 @@ else
   export EMBEDDING_MODEL_NAME="xlm-roberta-large"
 fi
 
+# do not use CRF on RST datasets
+export USE_CRF=0
+if [[ "$CORPUS" == *".pdtb."* ]]; then
+  export USE_CRF=1
+fi
+
 # use fastText embeddings
 if [[ "$CORPUS" == "eng"* ]]; then
   export FASTTEXT_EMBEDDING_FILE="embeddings/cc.en.300.vec"

@@ -1,7 +1,7 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2 + 300;
 local context_hidden_size = 400;
-local encoder_hidden_dim = 256;
+local encoder_hidden_dim = 512;
 
 local context_encoder = {
     "type": "lstm",
@@ -68,12 +68,12 @@ local token_features = {
         // at the start of the program. so, it'll always be a bilstm, but you can use the two items
         // below to configure the most important hyperparameters it has
         "encoder_hidden_dim": encoder_hidden_dim,
-        "encoder_recurrent_dropout": 0.0,
+        "encoder_recurrent_dropout": 0.1,
         // end encoder hyperparams
         "dropout": 0.5,
-        "feature_dropout": 0.0,
+        "feature_dropout": 0.1,
         "token_features": token_features,
-        "use_crf": false
+        "use_crf": if std.extVar("USE_CRF") == "1" then true else false
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
@@ -89,7 +89,7 @@ local token_features = {
                 [[".*transformer.*"], {"lr": 1e-5}]
             ]
         },
-        "patience": 7,
+        "patience": 5,
         "num_epochs": 60,
         // probably best to just use loss
         "validation_metric": "+span_f1"
