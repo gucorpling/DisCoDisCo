@@ -15,6 +15,7 @@ local context_encoder = {
 local token_features = {
     "pos_tags": {"source_key": "pos", "label_namespace": "upos"},
     "cpos_tags": {"source_key": "cpos", "label_namespace": "xpos"},
+    "genre": {"source_key": "genre", "label_namespace": "genre"},
     "head_distances": {"source_key": "head_dist", "xform_fn": "abs_natural_log"},
     "document_depth": {"source_key": "sent_doc_percentile"},
     "sentence_length": {"source_key": "s_len", "xform_fn": "natural_log"},
@@ -89,7 +90,7 @@ local token_features = {
                 [[".*transformer.*"], {"lr": 1e-5}]
             ]
         },
-        "patience": 5,
+        "patience": 8,
         "num_epochs": 60,
         // probably best to just use loss
         "validation_metric": "+span_f1"

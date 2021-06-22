@@ -125,11 +125,7 @@ class DepFeatures:
             # non-conj
             for id_l, l in enumerate(feats_l):
                 Bsub = sorted([x for x in l if x[0].startswith("B")], key=lambda x: x[2] - x[1])
-                Esub = sorted(
-                    [x for x in l if x[0].startswith("E")],
-                    key=lambda x: x[2] - x[1],
-                    reverse=True,
-                )
+                Esub = sorted([x for x in l if x[0].startswith("E")], key=lambda x: x[2] - x[1], reverse=True,)
                 Isub = sorted([x for x in l if x[0].startswith("I")], key=lambda x: x[2] - x[1])
                 if Bsub != []:
                     feats_l[id_l] = Bsub[0][0]
@@ -150,11 +146,7 @@ class DepFeatures:
             # conj
             for id_l, l in enumerate(feats_conjl):
                 Bsub = sorted([x for x in l if x[0].startswith("B")], key=lambda x: x[2] - x[1])
-                Esub = sorted(
-                    [x for x in l if x[0].startswith("E")],
-                    key=lambda x: x[2] - x[1],
-                    reverse=True,
-                )
+                Esub = sorted([x for x in l if x[0].startswith("E")], key=lambda x: x[2] - x[1], reverse=True,)
                 Isub = sorted([x for x in l if x[0].startswith("I")], key=lambda x: x[2] - x[1])
                 if Bsub != []:
                     feats_conjl[id_l] = Bsub[0][0]
@@ -232,13 +224,61 @@ def get_stype(tokens):
     return s_type
 
 
+def get_genre(corpus, doc):
+    if corpus in ["eng.rst.rstdt", "eng.pdtb.pdtb", "deu.rst.pcc", "por.rst.cstn", "zho.pdtb.cdtb"]:
+        return "news"
+    if corpus == "rus.rst.rrt":
+        if "news" in doc:
+            return "news"
+        else:
+            return doc.split("_")[0]
+    if corpus == "eng.rst.gum":
+        return doc.split("_")[1]
+    if corpus == "eng.rst.stac":
+        return "chat"
+    if corpus == "eus.rst.ert":
+        if doc.startswith("SENT"):
+            return doc[4:7]
+        else:
+            return doc[:3]
+    if corpus == "fra.sdrt.annodis":
+        if doc.startswith("wik"):
+            return "wiki"
+        else:
+            return doc.split("_")[0]
+    if corpus in ["nld.rst.nldt", "spa.rst.rststb"]:
+        return doc[:2]
+    if corpus in ["spa.rst.sctb", "spa.rst.sctb"]:
+        if doc.startswith("TERM"):
+            return "TERM"
+        else:
+            return doc.split("_")[0]
+
+    print("Warning: unknown genres for corpus", corpus)
+    return "_"
+
+
+CORPORA = [
+    "deu.rst.pcc",
+    "eng.pdtb.pdtb",
+    "eng.rst.gum",
+    "eng.rst.rstdt",
+    "eng.sdrt.stac",
+    "eus.rst.ert",
+    "fra.sdrt.annodis",
+    "nld.rst.nldt",
+    "por.rst.cstn",
+    "rus.rst.rrt",
+    "spa.rst.rststb",
+    "spa.rst.sctb",
+    "tur.pdtb.tdb",
+    "zho.pdtb.cdtb",
+    "zho.rst.sctb",
+]
+
+
 def read_conll_conn(
-    input_file_path,
-    mode="seg",
-    genre_pat=None,
-    as_text=False,
-    cap=None,
-    char_bytes=False,
+    input_file_path, mode="seg", as_text=False, cap=None, char_bytes=False,
 ):
     """
     Read a DISRPT shared task format .conll file
@@ -252,6 +292,13 @@ def read_conll_conn(
     :return: list of tokens, each a dictionary of features and values including a gold label, and
              vocabulary frequency list
     """
+    corpus = None
+    for c in CORPORA:
+        if c in input_file_path:
+            corpus = c
+            break
+    if corpus is None:
+        raise Exception("Unrecognized corpus! file path: " + input_file_path)
 
     if as_text:
         lines = input_file_path.split("\n")
@@ -387,10 +434,7 @@ def read_conll_conn(
                 if total > cap:
                     break
             docname = re.search(r"# newdoc id = (.+)", line).group(1)
-            if genre_pat is not None:
-                genre = re.search(genre_pat, docname).group(1)
-            else:
-                genre = "_"
+            genre = get_genre(corpus, docname)
             doc_sents = 1
             tok_id = 1
         elif len(line.strip()) == 0:
