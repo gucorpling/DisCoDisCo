@@ -20,9 +20,11 @@ fi
 export EMBEDDING_DIMS=768
 if [[ "$CORPUS" == "eng"* ]]; then 
   export EMBEDDING_DIMS=1024
-  export EMBEDDING_MODEL_NAME="roberta-large"
+  #export EMBEDDING_MODEL_NAME="roberta-large"
+  export EMBEDDING_MODEL_NAME="google/electra-large-discriminator"
 elif [[ "$CORPUS" == "zho"* ]]; then
   export EMBEDDING_MODEL_NAME="bert-base-chinese"
+  #export EMBEDDING_MODEL_NAME="hfl/chinese-electra-180g-base-discriminator"
 elif [[ "$CORPUS" == "eus"* ]]; then
   export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
 elif [[ "$CORPUS" == "por"* ]]; then

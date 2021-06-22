@@ -7,15 +7,14 @@ from allennlp.models import Model
 from allennlp.modules import (
     TextFieldEmbedder,
     Seq2VecEncoder,
-    Seq2SeqEncoder,
     TimeDistributed,
     ConditionalRandomField,
-    LayerNorm,
+    FeedForward,
 )
 from allennlp.modules.conditional_random_field import allowed_transitions
-from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
+from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper, PytorchTransformer, FeedForwardEncoder
 from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
-from allennlp.nn import InitializerApplicator
+from allennlp.nn import InitializerApplicator, Activation
 from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
@@ -69,9 +68,19 @@ class Disrpt2021Baseline(Model):
         # encoding --------------------------------------------------
         self.embedder = embedder
         encoder_input_dim = embedder.get_output_dim() + next_sentence_encoder.get_output_dim() * 2 + feature_dims
+        # self.encoder = PytorchTransformer(
+        #    encoder_input_dim,
+        #    1,
+        #    feedforward_hidden_dim=512,
+        #    num_attention_heads=4,
+        #    positional_encoding="embedding",
+        #    positional_embedding_size=256,
+        #    activation="gelu",
+        #    dropout_prob=0.0
+        # )
         self.encoder = PytorchSeq2SeqWrapper(
             StackedBidirectionalLstm(
-                encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout
+                encoder_input_dim, encoder_hidden_dim, 1, recurrent_dropout_probability=encoder_recurrent_dropout,
             )
         )
         self.prev_sentence_encoder = prev_sentence_encoder
@@ -81,16 +90,30 @@ class Disrpt2021Baseline(Model):
 
         # decoding --------------------------------------------------
         hidden_size = self.encoder.get_output_dim()
-        self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
 
         # encoding scheme
         label_encoding, encoding_map = detect_encoding(self.labels)
         if use_crf:
+            self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
             self._encoding_map = encoding_map
             constraints = allowed_transitions(label_encoding, self.labels)
             self.crf = ConditionalRandomField(num_labels, constraints, include_start_end_transitions=True)
         else:
             self.crf = None
+            # self.decode_feedforward = PytorchTransformer(
+            #     hidden_size,
+            #     1,
+            #     feedforward_hidden_dim=1024,
+            #     num_attention_heads=8,
+            #     positional_encoding="sinusoidal",
+            #     positional_embedding_size=256
+            # )
+            # self.decode_feedforward = FeedForwardEncoder(
+            #     FeedForward(
+            #         hidden_size, 2, [512, 256], Activation.by_name("tanh")(), 0.0
+            #     )
+            # )
+            self.label_projection_layer = TimeDistributed(torch.nn.Linear(hidden_size, num_labels))
 
         # util --------------------------------------------------
         # these are stateful objects that keep track of accuracy across an epoch
@@ -157,14 +180,15 @@ class Disrpt2021Baseline(Model):
         encoded_sequence = self.dropout(encoded_sequence)
 
         # Decoding --------------------------------------------------
-        label_logits = self.label_projection_layer(encoded_sequence)
         if self.crf:
             # project into the label space and use viterbi decoding on the CRF
+            label_logits = self.label_projection_layer(encoded_sequence)
             pred_labels = [
                 best_label_seq
                 for best_label_seq, viterbi_score in self.crf.viterbi_tags(label_logits, mask, top_k=None)
             ]
         else:
+            label_logits = self.label_projection_layer(encoded_sequence)
             pred_labels = torch.argmax(label_logits, dim=2)
 
         output = {

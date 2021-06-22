@@ -15,7 +15,12 @@ local context_encoder = {
 local token_features = {
     "pos_tags": {"source_key": "pos", "label_namespace": "upos"},
     "cpos_tags": {"source_key": "cpos", "label_namespace": "xpos"},
-    "genre": {"source_key": "genre", "label_namespace": "genre"},
+    "deprel_tags": {"source_key": "deprel", "label_namespace": "deprel"},
+    "dep_chunk_tags": {"source_key": "depchunk", "label_namespace": "depchunk"},
+    "parent_clauses": {"source_key": "parentclauses", "label_namespace": "parent_clauses"},
+    "s_type": {"source_key": "s_type", "label_namespace": "s_type"},
+    "case_tags": {"source_key": "case", "label_namespace": "case"},
+    "genre_tags": {"source_key": "genre", "label_namespace": "genre"},
     "head_distances": {"source_key": "head_dist", "xform_fn": "abs_natural_log"},
     "document_depth": {"source_key": "sent_doc_percentile"},
     "sentence_length": {"source_key": "s_len", "xform_fn": "natural_log"},
@@ -71,7 +76,7 @@ local token_features = {
         "encoder_hidden_dim": encoder_hidden_dim,
         "encoder_recurrent_dropout": 0.1,
         // end encoder hyperparams
-        "dropout": 0.5,
+        "dropout": 0.4,
         "feature_dropout": 0.1,
         "token_features": token_features,
         "use_crf": if std.extVar("USE_CRF") == "1" then true else false
