@@ -211,6 +211,22 @@ class FlairSentSplitter:
         tag_type = "ner"
         tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
         print(tag_dictionary)
+        embd = "distilbert-base-multilingual-cased"
+        lang = training_dir.split('/')[-2]
+        if "deu" in lang:
+            embd = "bert-base-german-cased"
+        elif "eus" in lang:
+            embd = "ixa-ehu/berteus-base-cased"
+        elif "zho" in lang:
+            embd = "bert-base-chinese"
+        elif "tur" in lang:
+            embd = "dbmdz/bert-base-turkish-cased"
+        elif "eng" in lang:
+            embd = "roberta-large"
+        elif "por" in lang:
+            embd = "neuralmind/bert-base-portuguese-cased"
+        elif "spa" in lang:
+            embd = "dccuchile/bert-base-spanish-wwm-cased"
 
         # initialize embeddings
         embedding_types = [
@@ -220,7 +236,7 @@ class FlairSentSplitter:
             # comment in these lines to use flair embeddings
             # FlairEmbeddings("news-forward"),
             # FlairEmbeddings("news-backward"),
-            TransformerWordEmbeddings('distilbert-base-multilingual-cased'),
+            TransformerWordEmbeddings(embd),
             # TransformerWordEmbeddings('bert-base-cased'),
         ]
 
@@ -237,7 +253,7 @@ class FlairSentSplitter:
 
         trainer: ModelTrainer = ModelTrainer(tagger, corpus, optimizer=Adam)
 
-        trainer.train(training_dir, learning_rate=3e-2, mini_batch_size=32, max_epochs=40)
+        trainer.train(training_dir, learning_rate=3e-5, mini_batch_size=32, max_epochs=40)
         self.model = tagger
 
     def predict(self, tt_sgml, modelDir, outmode="binary"):
@@ -445,5 +461,5 @@ if __name__ == "__main__":
         folders = glob(opts.file + '*/')
         for data_dir in folders:
             sgml = io.open(data_dir + '/sent_test.tt', encoding="utf8").read()
-            result = sentencer.predict(sgml, data_dir+'best-model.pt', outmode=opts.out_format)
+            result = sentencer.predict(sgml, data_dir + 'best-model.pt', outmode=opts.out_format)
             print(result)
