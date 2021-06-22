@@ -3,8 +3,9 @@ import os
 from collections import defaultdict
 
 # the following directory should "only" containing data folders:
-DATA_DIR = '/Users/shabnam/Desktop/GU/Projects/DISRPT/sharedtask2019/correctDATA/data/2019/'
-OUT_DIR = '/Users/shabnam/Desktop/GU/Projects/DISRPT/sharedtask2019/correctDATA/data/2019-output-testing/'
+
+DATA_DIR = '/home/shabnam/data/codes/data/dstrpt/2019/'
+OUT_DIR = '/home/shabnam/data/codes/data/dstrpt/2019-output/'
 
 if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)

@@ -444,7 +444,6 @@ if __name__ == "__main__":
     else:
         folders = glob(opts.file + '*/')
         for data_dir in folders:
-            sentencer.train(data_dir)
             sgml = io.open(data_dir + '/sent_test.tt', encoding="utf8").read()
-            result = sentencer.predict(sgml, data_dir, outmode=opts.out_format)
+            result = sentencer.predict(sgml, data_dir+'best-model.pt', outmode=opts.out_format)
             print(result)
