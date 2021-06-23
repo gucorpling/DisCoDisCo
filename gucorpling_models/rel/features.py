@@ -52,7 +52,8 @@ def get_genre(corpus, doc):
             return "TERM"
         else:
             return doc.split("_")[0]
-    raise IOError("Unknown corpus: " + corpus)
+    print("Unknown corpus: " + corpus)
+    return "_"
 
 
 def get_head_info(unit_span, toks):
