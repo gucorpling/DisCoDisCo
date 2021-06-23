@@ -19,7 +19,7 @@ from allennlp.nn.util import get_text_field_mask, sequence_cross_entropy_with_lo
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
 from gucorpling_models.seg.util import detect_encoding
-from gucorpling_models.features import get_token_feature_modules, TokenFeature
+from gucorpling_models.features import get_feature_modules, Feature
 
 
 @Model.register("disrpt_2021_seg_baseline")
@@ -43,7 +43,7 @@ class Disrpt2021Baseline(Model):
         prev_sentence_encoder: Seq2VecEncoder,
         next_sentence_encoder: Seq2VecEncoder,
         use_crf: bool = True,
-        token_features: Dict[str, TokenFeature] = None,
+        token_features: Dict[str, Feature] = None,
         initializer: InitializerApplicator = InitializerApplicator(),
         dropout: float = 0.5,
         feature_dropout: float = 0.3,
@@ -59,7 +59,7 @@ class Disrpt2021Baseline(Model):
 
         # modules for features
         if token_features is not None and len(token_features) > 0:
-            feature_modules, feature_dims = get_token_feature_modules(token_features, vocab)
+            feature_modules, feature_dims = get_feature_modules(token_features, vocab)
             self.feature_modules = feature_modules
         else:
             self.feature_modules = None
