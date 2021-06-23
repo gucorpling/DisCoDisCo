@@ -76,7 +76,7 @@ local token_features = {
         "encoder_hidden_dim": encoder_hidden_dim,
         "encoder_recurrent_dropout": 0.1,
         // end encoder hyperparams
-        "dropout": 0.4,
+        "dropout": 0.3,
         "feature_dropout": 0.1,
         "token_features": token_features,
         "use_crf": if std.extVar("USE_CRF") == "1" then true else false
@@ -95,7 +95,7 @@ local token_features = {
                 [[".*transformer.*"], {"lr": 1e-5}]
             ]
         },
-        "patience": 8,
+        "patience": 10,
         "num_epochs": 60,
         // probably best to just use loss
         "validation_metric": "+span_f1"
