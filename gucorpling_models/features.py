@@ -1,5 +1,5 @@
 import math
-from typing import Tuple, Dict, List, Any
+from typing import Tuple, Dict, List, Any, Union
 
 import torch
 from allennlp.common import FromParams, Registrable
@@ -7,30 +7,30 @@ import scipy.stats as stats
 
 
 from allennlp.data import Vocabulary, Field
-from allennlp.data.fields import TextField, TensorField, SequenceLabelField
+from allennlp.data.fields import TextField, TensorField, SequenceLabelField, LabelField
 
 
 class TransformationFunction(Registrable):
-    def __call__(self, xs):
+    def __call__(self, xs, tokenwise):
         raise NotImplementedError("Please use a class that inherits from TransformationFunction")
-
-
-@TransformationFunction.register("zscore")
-class ZScore(TransformationFunction):
-    def __call__(self, xs):
-        return stats.zscore(xs).tolist()
 
 
 @TransformationFunction.register("natural_log")
 class NaturalLog(TransformationFunction):
-    def __call__(self, xs):
-        return [math.log(x) for x in xs]
+    def __call__(self, xs, tokenwise):
+        if tokenwise:
+            return [math.log(x) for x in xs]
+        else:
+            return math.log(xs)
 
 
 @TransformationFunction.register("abs_natural_log")
 class NaturalLog(TransformationFunction):
-    def __call__(self, xs):
-        return [math.log(abs(x)) for x in xs]
+    def __call__(self, xs, tokenwise):
+        if tokenwise:
+            return [math.log(abs(x)) for x in xs]
+        else:
+            return math.log(abs(xs))
 
 
 class Feature(FromParams):
@@ -40,31 +40,36 @@ class Feature(FromParams):
         self.xform_fn = xform_fn
 
 
-def get_feature_field(feature: Feature, features: List[Any], sentence: TextField) -> Field:
+def get_feature_field(feature_config: Feature, features: Union[List[Any], Any], sentence: TextField = None) -> Field:
     """
     Returns an AllenNLP `Field` suitable for use on an AllenNLP `Instance` for a given token-level feature.
     If the type of the data in `features` is int or float, we will use TensorField; if it is str, we will
     use SequenceLabelField; other data types are currently unsupported.
 
     Args:
-        feature: a Feature for the Field
-        features: the token-level features that we are creating a Field for
-        sentence: the TextField the Field is associated with--needed for
+        feature_config: a Feature for the Field
+        features: either a list of data (token-wise features) or a single piece of data
+        sentence: the TextField the Field is associated with. If present, some fields will be associated with it.
 
     Returns:
         a Field for the feature.
     """
-    if not (len(features) == len(sentence.tokens)):
+    tokenwise = (isinstance(features, list) or isinstance(features, tuple))
+    if tokenwise and not (len(features) == len(sentence.tokens)):
         raise Exception(f"Token-level features must match the number of tokens")
 
-    if feature.xform_fn is not None:
-        features = feature.xform_fn(features)
+    if feature_config.xform_fn is not None:
+        features = feature_config.xform_fn(features, tokenwise=tokenwise)
 
-    py_type = type(features[0])
+    py_type = type(features[0]) if tokenwise else type(features)
     if py_type in [int, float]:
         return TensorField(torch.tensor(features))
+    elif py_type == str and tokenwise:
+        return SequenceLabelField(features, sentence, label_namespace=feature_config.label_namespace or "labels")
     elif py_type == str:
-        return SequenceLabelField(features, sentence, label_namespace=feature.label_namespace or "labels")
+        return LabelField(features, label_namespace=feature_config.label_namespace or "labels")
+    elif py_type == bool and not tokenwise:
+        return LabelField("true" if features else "false", label_namespace=feature_config.label_namespace or "labels")
     else:
         raise Exception(f"Unsupported type for feature: {py_type}")
 

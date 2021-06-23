@@ -5,8 +5,12 @@ import torch.nn.functional as F
 from allennlp.data import Vocabulary, TextFieldTensors
 from allennlp.models import Model
 from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, FeedForward
-from allennlp.nn import util, InitializerApplicator
+from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
+from allennlp.nn import util, InitializerApplicator, Activation
 from allennlp.training.metrics import CategoricalAccuracy
+
+from gucorpling_models.features import Feature, get_feature_modules
 
 
 @Model.register("disrpt_2021_rel_baseline")
@@ -24,22 +28,38 @@ class Disrpt2021RelBaseline(Model):
         encoder1: Seq2VecEncoder,
         encoder2: Seq2VecEncoder,
         dropout: float = 0.5,
+        features: Dict[str, Feature] = None,
         feedforward: FeedForward = None,
-        initializer: InitializerApplicator = None,
+        initializer: InitializerApplicator = None
     ):
         super().__init__(vocab)
         self.embedder = embedder
+
         self.encoder1 = encoder1
         self.encoder2 = encoder2
 
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(dropout)
 
+        # setup handwritten feature modules
+        if features is not None and len(features) > 0:
+            feature_modules, feature_dims = get_feature_modules(features, vocab)
+            self.feature_modules = feature_modules
+        else:
+            self.feature_modules = None
+            feature_dims = 0
+
         # we will decode the concatenated span reprs ...
-        linear_input_size = encoder1.get_output_dim() * 1 + encoder2.get_output_dim() * 1
+        linear_input_size = self.encoder1.get_output_dim() * 1 + self.encoder2.get_output_dim() * 1
         # plus the direction label size
         linear_input_size += 1
-        self.feedforward = feedforward
+        self.feedforward = FeedForward(
+            input_dim=encoder1.get_output_dim() * 2 + 1 + feature_dims,
+            num_layers=3,
+            hidden_dims=[512, 256, 128],
+            activations=Activation.by_name('relu')(),
+            dropout=0.1
+        )
         self.relation_decoder = torch.nn.Linear(
             linear_input_size if self.feedforward is None else self.feedforward.get_output_dim(), num_relations
         )
@@ -54,6 +74,17 @@ class Disrpt2021RelBaseline(Model):
         if initializer:
             initializer(self)
 
+    def _get_combined_feature_tensor(self, kwargs):
+        output_tensors = []
+        for module_key, module in self.feature_modules.items():
+            output_tensor = module(kwargs[module_key])
+            if len(output_tensor.shape) == 1:
+                output_tensor = output_tensor.unsqueeze(-1)
+            output_tensors.append(output_tensor)
+
+        combined_feature_tensor = torch.cat(output_tensors, dim=1)
+        return combined_feature_tensor
+
     def forward(  # type: ignore
         self,
         unit1_body: TextFieldTensors,
@@ -62,6 +93,7 @@ class Disrpt2021RelBaseline(Model):
         unit2_sentence: TextFieldTensors,
         direction: torch.Tensor,
         relation: torch.Tensor = None,
+        **kwargs
     ) -> Dict[str, torch.Tensor]:
 
         # Embed the text. Shape: (batch_size, num_tokens, embedding_dim)
@@ -76,6 +108,9 @@ class Disrpt2021RelBaseline(Model):
         encoded_unit2_body = self.encoder2(embedded_unit2_body, util.get_text_field_mask(unit2_body))
         # encoded_unit2_sentence = self.encoder2(embedded_unit2_sentence, util.get_text_field_mask(unit2_sentence))
 
+        # Get the features
+        features = self._get_combined_feature_tensor(kwargs)
+
         # Concatenate the vectors. Shape: (batch_size, encoder1_output_dim * 2 + encoder2_output_dim * 2 + 1)
         combined = torch.cat(
             (
@@ -84,6 +119,7 @@ class Disrpt2021RelBaseline(Model):
                 encoded_unit2_body,
                 # encoded_unit2_sentence,
                 direction.unsqueeze(-1),
+                features
             ),
             1,
         )

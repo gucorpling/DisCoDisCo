@@ -3,8 +3,8 @@ from collections import defaultdict
 from argparse import ArgumentParser
 from glob import glob
 
-class Token:
 
+class Token:
     def __init__(self, abs_id, form, xpos, abs_head, deprel, speaker):
         self.id = abs_id
         self.form = form
@@ -171,6 +171,17 @@ def process_relfile(infile, conllu, corpus, as_string=False):
             overlap_words = [w for w in unit1_words if w in unit2_words and w not in nltk_stop]
             feats["lex_overlap_words"] = " ".join(sorted(overlap_words)) if len(overlap_words) > 0 else "_"
             feats["lex_overlap_length"] = feats["lex_overlap_words"].count(" ") + 1 if len(overlap_words) > 0 else 0
+            del feats["unit1_sent"]
+            del feats["unit1_toks"]
+            del feats["unit1_txt"]
+            del feats["s1_toks"]
+            del feats["unit2_sent"]
+            del feats["unit2_toks"]
+            del feats["unit2_txt"]
+            del feats["s2_toks"]
+            del feats["label"]
+            del feats["orig_label"]
+            del feats["doc"]
             output.append(feats)
 
     return output
