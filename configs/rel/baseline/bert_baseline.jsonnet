@@ -2,6 +2,33 @@ local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2 + 300;
 local encoder_hidden_dim = 256;
 
+local features = {
+    "nuc_children": {"source_key": "nuc_children"},
+    "genre": {"source_key": "genre", "label_namespace": "genre"},
+    "u1_discontinuous": {"source_key": "u1_discontinuous", "label_namespace": "discontinuous"},
+    "u2_discontinuous": {"source_key": "u2_discontinuous", "label_namespace": "discontinuous"},
+    "u1_issent": {"source_key": "u1_issent", "label_namespace": "issent"},
+    "u2_issent": {"source_key": "u2_issent", "label_namespace": "issent"},
+    "u1_length": {"source_key": "u1_length"},
+    "u2_length": {"source_key": "u2_length"},
+    "length_ratio": {"source_key": "length_ratio"},
+    "u1_speaker": {"source_key": "u1_speaker", "label_namespace": "speaker"},
+    "u2_speaker": {"source_key": "u2_speaker", "label_namespace": "speaker"},
+    "same_speaker": {"source_key": "same_speaker", "label_namespace": "same_speaker"},
+    "u1_func": {"source_key": "u1_func", "label_namespace": "func"},
+    "u1_pos": {"source_key": "u1_pos", "label_namespace": "pos"},
+    "u1_depdir": {"source_key": "u1_depdir", "label_namespace": "depdir"},
+    "u2_func": {"source_key": "u2_func", "label_namespace": "func"},
+    "u2_pos": {"source_key": "u2_pos", "label_namespace": "pos"},
+    "u2_depdir": {"source_key": "u2_depdir", "label_namespace": "depdir"},
+    "doclen": {"source_key": "doclen"},
+    "u1_position": {"source_key": "u1_position"},
+    "u2_position": {"source_key": "u2_position"},
+    "distance": {"source_key": "distance"},
+    //"lex_overlap_words": {"source_key": "lex_overlap_words", "label_namespace": "lex_overlap_words"},
+    "lex_overlap_length": {"source_key": "lex_overlap_length"}
+};
+
 local encoder = {
     "type": "lstm",
     "input_size": embedding_dim,
@@ -29,7 +56,8 @@ local encoder = {
         "tokenizer": {
             "type": "pretrained_transformer",
             "model_name": transformer_model_name
-        }
+        },
+        "features": features
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
@@ -54,6 +82,7 @@ local encoder = {
                 "token_characters": import "../../components/char_embedder.libsonnet"
             }
         },
+        "features": features,
         "encoder1": encoder,
         "encoder2": encoder,
         "dropout": 0.5,

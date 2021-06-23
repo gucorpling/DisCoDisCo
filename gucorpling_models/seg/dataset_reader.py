@@ -14,7 +14,7 @@ from allennlp.data.fields import LabelField, TextField, SequenceLabelField, Meta
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
-from gucorpling_models.features import get_token_feature_field, TokenFeature
+from gucorpling_models.features import get_feature_field, Feature
 from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 
 
@@ -72,7 +72,7 @@ class Disrpt2021SegReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         max_tokens: int = None,
         document_boundary_token: str = "@@DOCUMENT_BOUNDARY@@",
-        token_features: Dict[str, TokenFeature] = None,
+        token_features: Dict[str, Feature] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -128,7 +128,7 @@ class Disrpt2021SegReader(DatasetReader):
                 if feature_name not in features.keys():
                     raise Exception(f"Feature {feature_name} not found. Sentence:\n  {sentence}")
                 feature_data = features[feature_name]
-                fields[feature_name] = get_token_feature_field(token_feature, feature_data, sentence_field)
+                fields[feature_name] = get_feature_field(token_feature, feature_data, sentence_field)
 
         if labels:
             fields["labels"] = SequenceLabelField(labels, sentence_field)
@@ -143,6 +143,10 @@ class Disrpt2021SegReader(DatasetReader):
         # use gumdrop's function for reading the conll
         token_dicts, _, _, _, _ = read_conll_conn(conll_file_path)
         token_dicts_by_sentence = group_by_sentence(token_dicts)
+        # ks = token_dicts[0].keys()
+        # for k in ks:
+        #     print(k, set(x[k] for x in token_dicts))
+        # assert False
         sentence_tokens = [
             preprocess_text(file_path, [td["word"] for td in sentence]) for sentence in token_dicts_by_sentence
         ]

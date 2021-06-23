@@ -17,7 +17,7 @@ from allennlp.nn import Activation
 from allennlp.nn.util import get_text_field_mask, masked_softmax, weighted_sum, sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
-from gucorpling_models.features import TokenFeature, get_token_feature_modules
+from gucorpling_models.features import Feature, get_feature_modules
 from gucorpling_models.seg.util import detect_encoding
 
 
@@ -35,7 +35,7 @@ class Disrpt2021SegBiattentive(Model):
         encoder: Seq2SeqEncoder,
         integrator: Seq2SeqEncoder,
         use_crf: bool = True,
-        token_features: Dict[str, TokenFeature] = None,
+        token_features: Dict[str, Feature] = None,
         embedding_dropout: float = 0.0,
         encoder_dropout: float = 0.5,
         feature_dropout: float = 0.3,
@@ -51,7 +51,7 @@ class Disrpt2021SegBiattentive(Model):
 
         # modules for features
         if token_features is not None and len(token_features) > 0:
-            feature_modules, feature_dims = get_token_feature_modules(token_features, vocab)
+            feature_modules, feature_dims = get_feature_modules(token_features, vocab)
             self.feature_modules = feature_modules
         else:
             self.feature_modules = None

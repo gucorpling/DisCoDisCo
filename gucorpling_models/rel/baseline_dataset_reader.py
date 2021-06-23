@@ -1,13 +1,16 @@
 import csv
 import logging
 import os
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Any
 from pprint import pprint
 
 from allennlp.data import DatasetReader, Instance, Field
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
+
+from gucorpling_models.features import Feature, get_feature_field
+from gucorpling_models.rel.features import process_relfile
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +22,14 @@ class Disrpt2021RelReader(DatasetReader):
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
         max_tokens: int = None,
+        features: Dict[str, Feature] = None,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.tokenizer = tokenizer or WhitespaceTokenizer()
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self.max_tokens = max_tokens  # useful for BERT
+        self.features = features
 
     def text_to_instance(  # type: ignore
         self,
@@ -34,6 +39,7 @@ class Disrpt2021RelReader(DatasetReader):
         unit2_sent: str,
         dir: str,
         label: str = None,
+        features: Dict[str, Any] = None
     ) -> Instance:
         unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)
@@ -52,6 +58,15 @@ class Disrpt2021RelReader(DatasetReader):
             "unit2_sentence": TextField(unit2_sent_tokens, self.token_indexers),
             "direction": LabelField(dir, label_namespace="direction_labels"),
         }
+
+        # read in handcrafted features
+        if self.features is not None:
+            for feature_name, feature_config in self.features.items():
+                if feature_name not in features:
+                    raise Exception(f"Feature {feature_name} not found. Pair:\n  {unit1_txt}\n  {unit2_txt}")
+                feature_data = features[feature_name]
+                fields[feature_name] = get_feature_field(feature_config, feature_data)
+
         if label:
             fields["relation"] = LabelField(label, label_namespace="relation_labels")
         return Instance(fields)
@@ -62,6 +77,12 @@ class Disrpt2021RelReader(DatasetReader):
         rels_file_path = file_path
         # conllu_file_path = rels_file_path.replace(".rels", ".conllu")
         # tok_file_path = rels_file_path.replace(".rels", ".tok")
+        corpus = file_path.split(os.sep)[-1].split('_')[0]
+        features = process_relfile(
+            file_path,
+            file_path.replace(".rels", ".conllu"),
+            corpus
+        )
 
         with open(rels_file_path, "r") as f:
             logger.debug("reading " + rels_file_path)
@@ -107,7 +128,12 @@ class Disrpt2021RelReader(DatasetReader):
             #                'or perhaps whether even higher proficiency and / or more '
             #                'native-like processing may be observed .',
             #  's2_toks': '186-262'}
-            for row in reader:
+
+            #    2019/deu.rst.pcc/deu.rst.pcc_dev.rels
+            # => deu.rst.pcc_dev.rels
+            # => deu.rst.pcc
+
+            for i, row in enumerate(reader):
                 yield self.text_to_instance(
                     unit1_txt=row["unit1_txt"],
                     unit1_sent=row["unit1_sent"],
@@ -115,4 +141,5 @@ class Disrpt2021RelReader(DatasetReader):
                     unit2_sent=row["unit2_sent"],
                     dir=row["dir"],
                     label=row["label"],
+                    features=features[i]
                 )
