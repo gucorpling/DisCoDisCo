@@ -12,4 +12,12 @@
         "dropout": 0.2,
         "bidirectional": true
     }
+    //"encoder": {
+    //    "type": "cnn",
+    //    "embedding_dim": 64,
+    //    "num_filters": 128,
+    //    "ngram_filter_sizes": [2,3,4],
+    //    "conv_layer_activation": "relu",
+    //    "output_dim": 64
+    //}
 }
