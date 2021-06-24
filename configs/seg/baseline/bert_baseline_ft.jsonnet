@@ -76,15 +76,15 @@ local token_features = {
         "encoder_hidden_dim": encoder_hidden_dim,
         "encoder_recurrent_dropout": 0.1,
         // end encoder hyperparams
-        "dropout": 0.5,
-        "feature_dropout": 0.1,
+        "dropout": 0.4,
+        "feature_dropout": 0.0,
         "token_features": token_features,
         "use_crf": if std.extVar("USE_CRF") == "1" then true else false
     },
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
     "data_loader": {
-        "batch_size": 8,
+        "batch_size": 4,
         "shuffle": true
     },
     "trainer": {
@@ -95,7 +95,7 @@ local token_features = {
                 [[".*transformer.*"], {"lr": 5e-6}]
             ]
         },
-        "patience": 5,
+        "patience": 8,
         "num_epochs": 60,
         // probably best to just use loss
         "validation_metric": "+span_f1"
