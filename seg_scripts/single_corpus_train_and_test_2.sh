@@ -78,7 +78,7 @@ export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
 echo $TRAIN_DATA_PATH
 allennlp train \
-  configs/seg/baseline/bert_baseline.jsonnet \
+  configs/seg/baseline/bert_baseline_ft.jsonnet \
   -s "$MODEL_DIR"
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
@@ -127,6 +127,6 @@ python seg_scripts/seg_eval_2019_modified.py "$CONLL_GOLD_PATH" "$CONLL_PRED_PAT
 printf "#!/bin/sh\npython seg_scripts/seg_eval_2019_modified.py $CONLL_GOLD_PATH $CONLL_PRED_PATH\n" > "$MODEL_DIR/calc_score.sh"
 
 # Accumulate a record of scores
-TSV_PATH="all_scores.tsv"
+TSV_PATH="all_scores_finetuning.tsv"
 cat "$MODEL_DIR/score.txt" | cut -d " " -f2 | head -n 1 | cut -d "_" -f1 | tr "\n" "\t" >> "$TSV_PATH"
 cat "$MODEL_DIR/score.txt" | cut -d " " -f3 | tail -n 3 | tr "\n" "\t" | sed 's/\t$/\n/g' >> "$TSV_PATH"
