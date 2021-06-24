@@ -23,9 +23,9 @@ if [[ "$CORPUS" == "eng"* ]]; then
   #export EMBEDDING_MODEL_NAME="roberta-large"
   export EMBEDDING_MODEL_NAME="google/electra-large-discriminator"
 elif [[ "$CORPUS" == "deu"* ]]; then
-  #export EMBEDDING_MODEL_NAME="bert-base-german-cased"
-  export EMBEDDING_DIMS=1024
-  export EMBEDDING_MODEL_NAME="deepset/gelectra-large"
+  #export EMBEDDING_DIMS=1024
+  #export EMBEDDING_MODEL_NAME="deepset/gelectra-large"
+  export EMBEDDING_MODEL_NAME="bert-base-german-cased"
 elif [[ "$CORPUS" == "fra"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
