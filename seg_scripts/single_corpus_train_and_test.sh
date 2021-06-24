@@ -28,13 +28,20 @@ elif [[ "$CORPUS" == "nld"* ]]; then
     export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
 elif [[ "$CORPUS" == "eus"* ]]; then
   export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
-elif [[ "$CORPUS" == "por"* ]]; then
-  export EMBEDDING_MODEL_NAME="neuralmind/bert-base-portuguese-cased"
 elif [[ "$CORPUS" == "tur"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
+#elif [[ "$CORPUS" == "por"* ]]; then
+#  export EMBEDDING_DIMS=1024
+#  export EMBEDDING_MODEL_NAME="neuralmind/bert-large-portuguese-cased"
+#elif [[ "$CORPUS" == "nld"* ]]; then
+#  #export EMBEDDING_MODEL_NAME="pdelobelle/robbert-v2-dutch-base"
+#  export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
+#elif [[ "$CORPUS" == "spa"* ]]; then
+#  export EMBEDDING_MODEL_NAME="mrm8488/RuPERTa-base"
 else
-  export EMBEDDING_DIMS=1024
-  export EMBEDDING_MODEL_NAME="xlm-roberta-large"
+  #export EMBEDDING_DIMS=1024
+  #export EMBEDDING_MODEL_NAME="xlm-roberta-large"
+  export EMBEDDING_MODEL_NAME="xlm-roberta-base"
 fi
 
 # do not use CRF on RST datasets
