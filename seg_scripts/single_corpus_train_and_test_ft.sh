@@ -99,31 +99,13 @@ JSON_PRED_PATH="${MODEL_DIR}/output_test.jsonl"
 CONLL_PRED_PATH="${MODEL_DIR}/output_test.conll"
 CONLL_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_test.conll"
 
-if [ ! -z "$3" ]; then
-  mkdir -p "$3"
-  for SPLIT in "train" "test" "dev"; do
-    JSON_PATH="$3/$1.$SPLIT.json"
-    echo "Writing JSON to $3"
-    CONLL_INPUT_PATH="${CORPUS_DIR}/${CORPUS}_${SPLIT}.conll"
-    JSON_OUTPUT_PATH="${MODEL_DIR}/output_${SPLIT}.jsonl"
-    allennlp predict \
-     "${MODEL_DIR}/model.tar.gz" \
-     "$CONLL_INPUT_PATH" \
-     --silent \
-     --use-dataset-reader \
-     --cuda-device 0 \
-     --output-file "$JSON_OUTPUT_PATH"
-    python seg_scripts/allennlp_json_to_ensemble_json.py "$JSON_OUTPUT_PATH" "$JSON_PATH"
-  done
-else
-  allennlp predict \
-    "${MODEL_DIR}/model.tar.gz" \
-    "$CONLL_GOLD_PATH" \
-    --silent \
-    --use-dataset-reader \
-    --cuda-device 0 \
-    --output-file "$JSON_PRED_PATH"
-fi
+allennlp predict \
+  "${MODEL_DIR}/model.tar.gz" \
+  "$CONLL_GOLD_PATH" \
+  --silent \
+  --use-dataset-reader \
+  --cuda-device 0 \
+  --output-file "$JSON_PRED_PATH"
 
 echo "Removing model files..."
 rm $MODEL_DIR/*.th
