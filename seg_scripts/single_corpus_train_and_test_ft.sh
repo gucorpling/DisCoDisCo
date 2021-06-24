@@ -6,7 +6,7 @@ if [ $# -eq 0 ]; then
 fi
 CORPUS="$1"
 CORPUS_DIR="data/2019/${1}"
-MODEL_DIR=${2:-models}/${CORPUS}_seg_bert_baseline
+MODEL_DIR=${2:-models}/${CORPUS}_seg_bert_baseline_ft
 if [[ ! -d $CORPUS_DIR ]]; then
   echo "Corpus \"$CORPUS_DIR\" not found"
   exit 1
@@ -41,7 +41,7 @@ elif [[ "$CORPUS" == "por"* ]]; then
 elif [[ "$CORPUS" == "tur"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 elif [[ "$CORPUS" == "rus"* ]]; then
-  export EMBEDDING_MODEL_NAME="blinoff/roberta-base-russian-v0"
+  export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
 else
   export EMBEDDING_DIMS=1024
   export EMBEDDING_MODEL_NAME="xlm-roberta-large"
@@ -90,6 +90,7 @@ echo $TRAIN_DATA_PATH
 allennlp train \
   configs/seg/baseline/bert_baseline_ft.jsonnet \
   -s "$MODEL_DIR"
+
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Testing on ${CORPUS}"
