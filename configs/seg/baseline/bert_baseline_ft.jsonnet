@@ -55,7 +55,7 @@ local token_features = {
                     "type": "pretrained_transformer_mismatched",
                     "model_name": transformer_model_name,
                     "train_parameters": true,
-                    "last_layer_only": false
+                    "last_layer_only": true
                 },
                 "fasttext": {
                     "type": "embedding",
@@ -95,7 +95,7 @@ local token_features = {
                 [[".*transformer.*"], {"lr": 5e-6}]
             ]
         },
-        "patience": 10,
+        "patience": 5,
         "num_epochs": 60,
         // probably best to just use loss
         "validation_metric": "+span_f1"
