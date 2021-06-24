@@ -23,25 +23,25 @@ if [[ "$CORPUS" == "eng"* ]]; then
   #export EMBEDDING_MODEL_NAME="roberta-large"
   export EMBEDDING_MODEL_NAME="google/electra-large-discriminator"
 elif [[ "$CORPUS" == "deu"* ]]; then
-    export EMBEDDING_MODEL_NAME="bert-base-german-cased"
+  export EMBEDDING_MODEL_NAME="bert-base-german-cased"
 elif [[ "$CORPUS" == "fra"* ]]; then
-    export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
+  export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
 elif [[ "$CORPUS" == "nld"* ]]; then
-    export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
   export EMBEDDING_MODEL_NAME="bert-base-chinese"
 elif [[ "$CORPUS" == "nld"* ]]; then
-    export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
 elif [[ "$CORPUS" == "eus"* ]]; then
   export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
 elif [[ "$CORPUS" == "spa"* ]]; then
-    export EMBEDDING_MODEL_NAME="dccuchile/bert-base-spanish-wwm-cased"
+  export EMBEDDING_MODEL_NAME="dccuchile/bert-base-spanish-wwm-cased"
 elif [[ "$CORPUS" == "por"* ]]; then
   export EMBEDDING_MODEL_NAME="neuralmind/bert-base-portuguese-cased"
 elif [[ "$CORPUS" == "tur"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 elif [[ "$CORPUS" == "rus"* ]]; then
-    export EMBEDDING_MODEL_NAME="blinoff/roberta-base-russian-v0"
+  export EMBEDDING_MODEL_NAME="blinoff/roberta-base-russian-v0"
 else
   export EMBEDDING_DIMS=1024
   export EMBEDDING_MODEL_NAME="xlm-roberta-large"
