@@ -26,12 +26,11 @@ elif [[ "$CORPUS" == "deu"* ]]; then
   export EMBEDDING_MODEL_NAME="bert-base-german-cased"
 elif [[ "$CORPUS" == "fra"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
-elif [[ "$CORPUS" == "nld"* ]]; then
-  export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
   export EMBEDDING_MODEL_NAME="bert-base-chinese"
 elif [[ "$CORPUS" == "nld"* ]]; then
-  export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  #export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  export EMBEDDING_MODEL_NAME="pdelobelle/robbert-v2-dutch-base"
 elif [[ "$CORPUS" == "eus"* ]]; then
   export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
 elif [[ "$CORPUS" == "spa"* ]]; then
