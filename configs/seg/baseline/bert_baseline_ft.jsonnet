@@ -90,12 +90,12 @@ local token_features = {
     "trainer": {
         "optimizer": {
             "type": "huggingface_adamw",
-            "lr": 3e-4,
+            "lr": 5e-4,
             "parameter_groups": [
                 [[".*transformer.*"], {"lr": 1e-5}]
             ]
         },
-        "patience": 8,
+        "patience": 10,
         "num_epochs": 60,
         // probably best to just use loss
         "validation_metric": "+span_f1"
