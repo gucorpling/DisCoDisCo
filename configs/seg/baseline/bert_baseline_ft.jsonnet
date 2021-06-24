@@ -92,7 +92,7 @@ local token_features = {
             "type": "huggingface_adamw",
             "lr": 3e-4,
             "parameter_groups": [
-                [[".*transformer.*"], {"lr": 5e-6}]
+                [[".*transformer.*"], {"lr": 1e-5}]
             ]
         },
         "patience": 8,
