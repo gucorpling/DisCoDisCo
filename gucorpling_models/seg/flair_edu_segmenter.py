@@ -208,11 +208,7 @@ class FlairEDUSplitter:
             embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
 
             tagger: SequenceTagger = SequenceTagger(
-                hidden_size=100,
-                embeddings=embeddings,
-                tag_dictionary=tag_dictionary,
-                tag_type=tag_type,
-                use_crf=True,
+                hidden_size=100, embeddings=embeddings, tag_dictionary=tag_dictionary, tag_type=tag_type, use_crf=True,
             )
 
             from torch.optim.adagrad import Adagrad
