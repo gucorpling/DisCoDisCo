@@ -1,4 +1,4 @@
-from gucorpling_models.rel.dataset_reader import Disrpt2021RelReader
+from gucorpling_models.rel.baseline_dataset_reader import Disrpt2021RelReader
 
 
 class TestDisrpt2021SegTsvReader:
