@@ -447,6 +447,8 @@ if __name__ == "__main__":
         help="output list of binary split indices or TT SGML",
         default="sgml",
     )
+    p.add_argument("-p", "--partition", default="test", choices=["test", "train", "dev"],
+                   help="testing input partition")
 
     from glob import glob
 
@@ -460,6 +462,8 @@ if __name__ == "__main__":
     else:
         folders = glob(opts.file + '*/')
         for data_dir in folders:
-            sgml = io.open(data_dir + '/sent_test.tt', encoding="utf8").read()
+            sgml = io.open(data_dir + '/sent_' + opts.partition + '.tt', encoding="utf8").read()
             result = sentencer.predict(sgml, data_dir + 'best-model.pt', outmode=opts.out_format)
             print(result)
+            with open(data_dir + '/sent_' + opts.partition + '.pred', 'w') as of:
+                of.write(result)
