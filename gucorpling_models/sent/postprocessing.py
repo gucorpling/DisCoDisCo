@@ -7,25 +7,35 @@ import stanza
 
 def get_stanza_model(lang):
     if lang == 'eng':
-        nlp = stanza.Pipeline(lang='en', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('en')
+        nlp = stanza.Pipeline(lang='en', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'deu':
-        nlp = stanza.Pipeline(lang='de', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('de')
+        nlp = stanza.Pipeline(lang='de', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'fra':
-        nlp = stanza.Pipeline(lang='fr', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('fr')
+        nlp = stanza.Pipeline(lang='fr', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'nld':
-        nlp = stanza.Pipeline(lang='nl', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('nl')
+        nlp = stanza.Pipeline(lang='nl', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'por':
-        nlp = stanza.Pipeline(lang='pt', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('pt')
+        nlp = stanza.Pipeline(lang='pt', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'rus':
-        nlp = stanza.Pipeline(lang='ru', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('ru')
+        nlp = stanza.Pipeline(lang='ru', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'spa':
-        nlp = stanza.Pipeline(lang='es', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('es')
+        nlp = stanza.Pipeline(lang='es', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'zho':
-        nlp = stanza.Pipeline(lang='zh', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('zh')
+        nlp = stanza.Pipeline(lang='zh', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'eus':
-        nlp = stanza.Pipeline(lang='eu', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('eu')
+        nlp = stanza.Pipeline(lang='eu', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
     elif lang == 'tur':
-        nlp = stanza.Pipeline(lang='tr', processors='tokenize', tokenize_pretokenized=True)
+        stanza.download('tr')
+        nlp = stanza.Pipeline(lang='tr', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
 
     return nlp
 
@@ -63,10 +73,19 @@ def get_tags(sentences, lang):
         tg['lemma'].append([])
         tg['pos1'].append([])
         tg['pos2'].append([])
-        for token in sentence.tokens:
-            tg['lemma'][-1].append(token.lemma)
-            tg['pos1'][-1].append(token.xpos)
-            tg['pos2'][-1].append(token.upos)
+        for token in sentence.words:
+            if token.lemma:
+                tg['lemma'][-1].append(token.lemma)
+            else:
+                tg['lemma'][-1].append("_")
+            if token.xpos:
+                tg['pos1'][-1].append(token.xpos)
+            else:
+                tg['pos1'][-1].append("_")
+            if token.upos:
+                tg['pos2'][-1].append(token.upos)
+            else:
+                tg['pos2'][-1].append("_")
 
     return tg
 
@@ -108,26 +127,36 @@ if __name__ == "__main__":
                     sentences[-1].append(line.rstrip())
             tags = get_tags(sentences, lang)
             data = dependency_parser(sentences, lang, opts.model_dir)
-            with open(data_dir + 'docs_tokens_' + opts.mode + '.json') as f:
+            name = data_dir.split('/')[-2]
+            with open(opts.inf + '/' + name + '/docs_tokens_' + opts.mode + '.json') as f:
                 inf = json.load(f)
 
-            with open(data_dir + '/' + data_dir.split('/')[-2] + '_' + opts.mode + '_silver.conll', 'r') as ot:
+            with open(data_dir + '/' + data_dir.split('/')[-2] + '_' + opts.mode + '_silver.conll', 'w') as of:
                 start = 0
-                ot.write('# newdoc id = ' + inf['docs'][0] + '\n')
+                st = '# newdoc id = ' + inf['docs'][0] + '\n'
                 tok_index = 0
                 doc_index = 0
                 for i in range(start, len(sentences)):
-                    lns = data[i].split('\n')
+                    #import pdb; pdb.set_trace();
+                    lns = str(data.sentences[i]).split('\n')
                     for j in range(len(sentences[i])):
                         if tok_index == len(inf['toks'][doc_index]):
-                            ot.write('# newdoc id = ' + inf['docs'][doc_index + 1] + '\n')
+                            if not st.endswith('\n\n'):
+                                st+= '\n'
+                            st += '# newdoc id = ' + inf['docs'][doc_index + 1] + '\n'
                             tok_index = 0
                             doc_index += 1
                         ann = lns[j].split('\t')
                         if ann[1] != inf['toks'][doc_index][tok_index]:
-                            print("tokens not matching")
-                            sys.exit()
-                        res = ann[0] + '\t' + ann[1] + '\t' + tags['lemma'][i][j] + '\t' + tags['pos1'][i][
+                            if not (ann[1] == '&' and inf['toks'][doc_index][tok_index]=='&amp;'):
+                                import pdb; pdb.set_trace();
+                                print("tokens not matching")
+                                sys.exit()
+                        #import pdb; pdb.set_trace();
+                        res = ann[0] + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + tags['pos1'][i][
                             j] + '\t' + tags['pos2'][i][j] + '\t' + ann[5] + '\t' + ann[6] + '\t' + ann[7] + '\t' + \
-                              ann[8] + '\t' + ann[8] + '\n'
-                        ot.write(res)
+                              ann[8] + '\t' + ann[9] + '\n'
+                        tok_index+=1
+                        st+=res
+                    st+='\n'
+                of.write(st)
