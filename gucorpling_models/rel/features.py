@@ -98,6 +98,18 @@ def get_head_info(unit_span, toks):
     return head.deprel, head.xpos, head_dir
 
 
+def get_case(text,lang):
+    stopwords = stop[lang]
+    words = text.split()
+    non_stop = [w for w in words if w not in stopwords]
+    if all([w[0].isupper() for w in non_stop]):
+        return "title"
+    elif words[0][0].isupper():
+        return "cap_initial"
+    else:
+        return "other"
+
+
 def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=False):
     lang = corpus.split(".")[0]
     stop_list = stop[lang]
@@ -187,17 +199,20 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
             overlap_words = [w for w in unit1_words if w in unit2_words and w not in stop_list]
             feats["lex_overlap_words"] = " ".join(sorted(overlap_words)) if len(overlap_words) > 0 else "_"
             feats["lex_overlap_length"] = feats["lex_overlap_words"].count(" ") + 1 if len(overlap_words) > 0 else 0
-            del feats["unit1_sent"]
-            del feats["unit1_toks"]
-            del feats["unit1_txt"]
-            del feats["s1_toks"]
-            del feats["unit2_sent"]
-            del feats["unit2_toks"]
-            del feats["unit2_txt"]
-            del feats["s2_toks"]
-            del feats["label"]
-            del feats["orig_label"]
-            del feats["doc"]
+            feats["unit1_case"] = get_case(feats["unit1_txt"],lang)
+            feats["unit2_case"] = get_case(feats["unit2_txt"],lang)
+            if not keep_all_columns:
+                del feats["unit1_sent"]
+                del feats["unit1_toks"]
+                del feats["unit1_txt"]
+                del feats["s1_toks"]
+                del feats["unit2_sent"]
+                del feats["unit2_toks"]
+                del feats["unit2_txt"]
+                del feats["s2_toks"]
+                del feats["label"]
+                del feats["orig_label"]
+                del feats["doc"]
             output.append(feats)
 
     return output
