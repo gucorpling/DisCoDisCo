@@ -1,39 +1,31 @@
 from glob import glob
 from argparse import ArgumentParser
-import spacy
-import os, json, sys
+import json, sys
 from diaparser.parsers import Parser
+import stanza
 
 
-def get_spacy_model(lang):
+def get_stanza_model(lang):
     if lang == 'eng':
-        os.system("python -m spacy download en_core_web_sm")
-        nlp = spacy.load("en_core_web_sm")
+        nlp = stanza.Pipeline(lang='en', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'deu':
-        os.system("python -m spacy download de_core_news_sm")
-        nlp = spacy.load("de_core_news_sm")
+        nlp = stanza.Pipeline(lang='de', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'fra':
-        os.system("python -m spacy download fr_core_news_sm")
-        nlp = spacy.load("fr_core_news_sm")
+        nlp = stanza.Pipeline(lang='fr', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'nld':
-        os.system("python -m spacy download nl_core_news_sm")
-        nlp = spacy.load("nl_core_news_sm")
+        nlp = stanza.Pipeline(lang='nl', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'por':
-        os.system("python -m spacy download pt_core_news_sm")
-        nlp = spacy.load("pt_core_news_sm")
+        nlp = stanza.Pipeline(lang='pt', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'rus':
-        os.system("python -m spacy download ru_core_news_sm")
-        nlp = spacy.load("ru_core_news_sm")
+        nlp = stanza.Pipeline(lang='ru', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'spa':
-        os.system("python -m spacy download es_core_news_sm")
-        nlp = spacy.load("es_core_news_sm")
+        nlp = stanza.Pipeline(lang='es', processors='tokenize', tokenize_pretokenized=True)
     elif lang == 'zho':
-        os.system("python -m spacy download zh_core_web_sm")
-        nlp = spacy.load("zh_core_web_sm")
-    else:
-        # eus and tur
-        os.system("python -m spacy download xx_ent_wiki_sm")
-        nlp = spacy.load("xx_ent_wiki_sm")
+        nlp = stanza.Pipeline(lang='zh', processors='tokenize', tokenize_pretokenized=True)
+    elif lang == 'eus':
+        nlp = stanza.Pipeline(lang='eu', processors='tokenize', tokenize_pretokenized=True)
+    elif lang == 'tur':
+        nlp = stanza.Pipeline(lang='tr', processors='tokenize', tokenize_pretokenized=True)
 
     return nlp
 
@@ -64,17 +56,17 @@ def get_diaparser_model(lang, model_dir):
 
 
 def get_tags(sentences, lang):
-    nlp = get_spacy_model(lang)
-    nlp.tokenizer = nlp.tokenizer.tokens_from_list
+    nlp = get_stanza_model(lang)
     tg = {'lemma': [], 'pos1': [], 'pos2': []}
-    for doc in nlp.pipe(sentences):
+    doc = nlp(sentences)
+    for i, sentence in enumerate(doc.sentences):
         tg['lemma'].append([])
         tg['pos1'].append([])
         tg['pos2'].append([])
-        for token in doc:
-            tg['lemma'][-1].append(token.lemma_)
-            tg['pos1'][-1].append(token.pos_)
-            tg['pos2'][-1].append(token.tag_)
+        for token in sentence.tokens:
+            tg['lemma'][-1].append(token.lemma)
+            tg['pos1'][-1].append(token.xpos)
+            tg['pos2'][-1].append(token.upos)
 
     return tg
 
@@ -103,7 +95,6 @@ if __name__ == "__main__":
     opts = p.parse_args()
 
     folders = glob(opts.file+'/' + '*/')
-    print(folders)
     for data_dir in folders:
         with open(data_dir + '/sent_' + opts.mode + '.pred', 'r') as inp:
             lang = data_dir.split('/')[-2].split('.')[0]
