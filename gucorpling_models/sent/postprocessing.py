@@ -102,9 +102,10 @@ if __name__ == "__main__":
                    default="dev")
     opts = p.parse_args()
 
-    folders = glob(opts.file + '*/')
+    folders = glob(opts.file+'/' + '*/')
+    print(folders)
     for data_dir in folders:
-        with open(data_dir + '/sent_' + opts.mode + '.txt', 'r') as inp:
+        with open(data_dir + '/sent_' + opts.mode + '.pred', 'r') as inp:
             lang = data_dir.split('/')[-2].split('.')[0]
             sentences = []
             for line in inp:
@@ -116,7 +117,7 @@ if __name__ == "__main__":
                     sentences[-1].append(line.rstrip())
             tags = get_tags(sentences, lang)
             data = dependency_parser(sentences, lang, opts.model_dir)
-            with open(data_dir + 'docs_tokens' + opts.mode + '.json') as f:
+            with open(data_dir + 'docs_tokens_' + opts.mode + '.json') as f:
                 inf = json.load(f)
 
             with open(data_dir + '/' + data_dir.split('/')[-2] + '_' + opts.mode + '_silver.conll', 'r') as ot:
