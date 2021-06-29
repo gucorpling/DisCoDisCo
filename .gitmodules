@@ -1,6 +1,0 @@
-[submodule "sharedtask2021"]
-	path = sharedtask2021
-	url = https://github.com/disrpt/sharedtask2021.git
-[submodule "sharedtask2019"]
-	path = sharedtask2019
-	url = https://github.com/disrpt/sharedtask2019.git
