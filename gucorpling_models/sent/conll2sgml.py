@@ -26,10 +26,13 @@ for n in names:
             os.makedirs(path)
         with io.open(path + "sent" + p + ".tt", "w", encoding="utf8", newline="\n") as f:
             begin = True
-
             for line in lines:
                 if not line:
                     continue
+                if "\t" in line:
+                    fields = line.split("\t")
+                    if "-" in fields[0]:
+                        continue
                 if line.startswith("1" + '\t'):
                     if not begin:
                         f.write("</s>" + "\n")
