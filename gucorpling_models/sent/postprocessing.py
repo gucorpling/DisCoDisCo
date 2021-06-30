@@ -117,6 +117,10 @@ if __name__ == "__main__":
     for data_dir in folders:
         with open(data_dir + '/sent_' + opts.mode + '.pred', 'r') as inp:
             lang = data_dir.split('/')[-2].split('.')[0]
+            print('\n\n******************************************************\n\n')
+            print(lang)
+            print(data_dir)
+            print('\n\n******************************************************\n\n')
             sentences = []
             for line in inp:
                 if line.startswith('<s>'):
@@ -124,6 +128,9 @@ if __name__ == "__main__":
                 elif line.startswith('</s>'):
                     continue
                 else:
+                    if len(sentences)==0:
+                        print('issue with first sentence in predictions')
+                        sentences.append([])
                     sentences[-1].append(line.rstrip())
             tags = get_tags(sentences, lang)
             data = dependency_parser(sentences, lang, opts.model_dir)
