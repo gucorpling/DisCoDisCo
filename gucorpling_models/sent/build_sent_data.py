@@ -23,7 +23,7 @@ for n in names:
     file_ = DATA_DIR + n + "/" + n
     data = defaultdict(list)
     for p in partition:
-        file = file_ + p + ".conll"
+        file = file_ + p + ".conllu"
         lines = io.open(file, encoding="utf8").read().strip().split("\n")
 
         for line in lines:

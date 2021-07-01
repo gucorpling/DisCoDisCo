@@ -19,7 +19,7 @@ for n in names:
         continue
     file_ = DATA_DIR + n + "/" + n
     for p in partition:
-        file = file_ + p + ".conll"
+        file = file_ + p + ".conllu"
         doc_names = []
         all_tokens = []
         lines = io.open(file, encoding="utf8").read().strip().split("\n")

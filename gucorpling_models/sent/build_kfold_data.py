@@ -20,7 +20,7 @@ for n in names:
     if not os.path.isdir(DATA_DIR + n + "/"):
         continue
     file_ = DATA_DIR + n + "/" + n
-    file = file_ + p + ".conll"
+    file = file_ + p + ".conllu"
     path = S_DIR + n + "/"
     with open(path + 'docs_tokens' + p + '.json') as f:
         data = json.load(f)
@@ -32,15 +32,15 @@ for n in names:
             os.makedirs(D_DIR + str(i))
         dest = D_DIR + str(i) + '/' + n + '/'
         os.makedirs(dest)
-        os.system("cp " + file_ + "_dev.conll " + dest)
+        os.system("cp " + file_ + "_dev.conllu " + dest)
         if i == 4:
             test_docs = data['docs'][d * i:]
         else:
             test_docs = data['docs'][d * i:d * (i + 1)]
 
         lines = io.open(file, encoding="utf8").read().strip().split("\n")
-        with io.open(dest + n + "_train.conll", "w", encoding="utf8", newline="\n") as ftrain:
-            with io.open(dest + n + "_test.conll", "w", encoding="utf8", newline="\n") as ftest:
+        with io.open(dest + n + "_train.conllu", "w", encoding="utf8", newline="\n") as ftrain:
+            with io.open(dest + n + "_test.conllu", "w", encoding="utf8", newline="\n") as ftest:
                 for line in lines:
                     if line.startswith("# newdoc id"):
                         name = line.split(' = ')[1].strip()

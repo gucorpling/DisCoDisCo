@@ -138,7 +138,7 @@ if __name__ == "__main__":
             with open(opts.inf + '/' + name + '/docs_tokens_' + opts.mode + '.json') as f:
                 inf = json.load(f)
 
-            with open(data_dir + '/' + data_dir.split('/')[-2] + '_' + opts.mode + '_silver.conll', 'w') as of:
+            with open(data_dir + '/' + data_dir.split('/')[-2] + '_' + opts.mode + '_silver.conllu', 'w') as of:
                 start = 0
                 st = '# newdoc id = ' + inf['docs'][0] + '\n'
                 tok_index = 0
