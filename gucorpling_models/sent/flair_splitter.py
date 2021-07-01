@@ -216,17 +216,24 @@ class FlairSentSplitter:
         if "deu" in lang:
             embd = "bert-base-german-cased"
         elif "eus" in lang:
-            embd = "ixa-ehu/berteus-base-cased"
+            embd = "mrm8488/RoBasquERTa"
         elif "zho" in lang:
             embd = "bert-base-chinese"
         elif "tur" in lang:
             embd = "dbmdz/bert-base-turkish-cased"
         elif "eng" in lang:
-            embd = "roberta-large"
+            embd = "bert-base-cased"
         elif "por" in lang:
             embd = "neuralmind/bert-base-portuguese-cased"
         elif "spa" in lang:
             embd = "dccuchile/bert-base-spanish-wwm-cased"
+        elif "fra" in lang:
+            embd = "dbmdz/bert-base-french-europeana-cased"
+        elif "nld" in lang:
+            embd="GroNLP/bert-base-dutch-cased"
+        elif "rus" in lang:
+            embd="blinoff/roberta-base-russian-v0"
+
 
         # initialize embeddings
         embedding_types = [

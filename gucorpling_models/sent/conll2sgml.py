@@ -4,8 +4,15 @@ from collections import defaultdict
 
 # the following directory should "only" containing data folders:
 
-DATA_DIR = '/home/shabnam/data/codes/data/dstrpt/2019/'
-OUT_DIR = '/home/shabnam/data/codes/data/dstrpt/2019-output/'
+from argparse import ArgumentParser
+
+p = ArgumentParser()
+p.add_argument("-d", "--dir", help="path to directory which ONLY containing data folders")
+p.add_argument("-o", "--out", help="path to output directory for folds")
+opts = p.parse_args()
+
+DATA_DIR = opts.dir+'/'
+OUT_DIR = opts.out+'/'
 
 if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)
