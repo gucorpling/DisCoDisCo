@@ -150,6 +150,9 @@ class Disrpt2021RelReader(DatasetReader):
         # unit1_txt_tokens = self.tokenizer.tokenize(unit1_txt)
         # unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
 
+        # unit1_span_idx = [i for i, n  in enumerate(unit1_span_mask) if n != 0]
+        # unit2_span_idx = [i for i, n  in enumerate(unit2_span_mask) if n != 0]
+
         fields: Dict[str, Field] = {
             "sentence1": TextField(unit1_sent_tokens[:self.max_length], self.token_indexers),
             "sentence2": TextField(unit2_sent_tokens[:self.max_length], self.token_indexers),

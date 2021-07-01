@@ -18,6 +18,15 @@ from allennlp.training.metrics import CategoricalAccuracy
 logger = logging.getLogger(__name__)
 
 
+def weighted_sum(att, mat):
+    if att.dim() == 2 and mat.dim() == 3:
+        return att.unsqueeze(1).bmm(mat).squeeze(1)
+    elif att.dim() == 3 and mat.dim() == 3:
+        return att.bmm(mat)
+    else:
+        AssertionError('Incompatible attention weights and matrix.')
+
+
 @Model.register("disrpt_2021_e2e")
 class E2eResolver(Model):
 
@@ -72,17 +81,25 @@ class E2eResolver(Model):
         return start_embeddings, end_embeddings
 
     def _get_span_embeddings(self, contextualized_unit_sentence, unit_span_mask):
-        att_logits = self._global_attention(contextualized_unit_sentence)    # [b, s, 1]
-        att_logits[~unit_span_mask] = float('-inf')
-        att_weights = F.softmax(att_logits, 1)  # [b, s, 1]
-        att_span_embeds = torch.mul(contextualized_unit_sentence, att_weights.expand_as(contextualized_unit_sentence))   # [b, s, e]
-        weighted_span_embeds = att_span_embeds.sum(dim=1)   # [b, e]
-        return weighted_span_embeds
+        """
+        Get span representations based on attention weights
+        """
+        global_attention_logits = self._global_attention(contextualized_unit_sentence)  # [b, s, 1]
+        concat_tensor = torch.cat([contextualized_unit_sentence, global_attention_logits], -1)  # [b, s, e+1]
+
+        resized_span_mask = torch.unsqueeze(unit_span_mask, -1).expand(-1, -1, concat_tensor.size(-1))
+        concat_output = concat_tensor * resized_span_mask
+        span_embeddings = concat_output[:, :, :-1]  # [b, s, e]
+        span_attention_logits = concat_output[:, :, -1] # [b, s, 1]
+
+        span_attention_weights = F.softmax(span_attention_logits, 1)  # [b, s]
+        attended_text_embeddings = weighted_sum(span_attention_weights, span_embeddings)    # [b, e]
+        return attended_text_embeddings
 
     def _get_span_representations(self, embedded_unit_sentence, unit_span_mask, unit_span_indices, unit_sentence_mask):
         assert unit_span_mask.size(1) == embedded_unit_sentence.size(1)
         contextualized_unit_sentence = self._context_layer(embedded_unit_sentence, unit_sentence_mask)
-        weighted_span_embeds = self._get_span_embeddings(contextualized_unit_sentence, unit_span_mask)  # [b, e]
+        weighted_span_embeds = self._get_span_embeddings(embedded_unit_sentence, unit_span_mask)  # [b, e]
         start_embeddings, end_embeddings = self._get_end_points_enmbeddings(contextualized_unit_sentence, unit_span_indices)    # [b, e]
         span_representations = torch.cat([start_embeddings, weighted_span_embeds, end_embeddings], 1)   # [b, 3e]
         return span_representations
@@ -99,7 +116,7 @@ class E2eResolver(Model):
             unit2_span_indices: torch.Tensor,
             direction: torch.Tensor,
             distance: torch.Tensor,
-            relation: torch.Tensor = None,
+            relation: torch.Tensor,
     ) -> Dict[str, torch.Tensor]:
 
         sentence1_mask = util.get_text_field_mask(sentence1)
