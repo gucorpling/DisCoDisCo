@@ -8,11 +8,12 @@ p.add_argument("-d", "--dir", help="path to directory which ONLY containing data
 p.add_argument("-o", "--out", help="path to output directory")
 opts = p.parse_args()
 
-DATA_DIR = opts.dir+'/'
-OUT_DIR = opts.out+'/'
+DATA_DIR = opts.dir
+OUT_DIR = opts.out
 names = os.listdir(DATA_DIR + "/")
 partition = ["_train", "_dev", "_test"]
-
+if not os.path.isdir(OUT_DIR):
+    os.makedirs(OUT_DIR)
 for n in names:
     if not os.path.isdir(DATA_DIR + n + "/"):
         continue
