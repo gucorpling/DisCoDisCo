@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     folders = glob(opts.file+'/' + '*/')
     for data_dir in folders:
-        with open(data_dir + '/sent_' + opts.mode + '.pred', 'r') as inp:
+        with open(data_dir + '/sent_' + opts.mode + '.predV2', 'r') as inp:
             lang = data_dir.split('/')[-2].split('.')[0]
             print('\n\n******************************************************\n\n')
             print(lang)

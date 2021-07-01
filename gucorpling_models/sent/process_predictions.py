@@ -23,7 +23,7 @@ if __name__ == "__main__":
                     continue
                 if begin and line != "<s>":
                     sents.append("<s>")
-                    begin = False
+                begin = False
                 sents.append(line)
         new_sents = []
         for j in range(len(sents)):
@@ -34,6 +34,8 @@ if __name__ == "__main__":
                     new_sents.append("<s>")
                 else:
                     new_sents.append(sents[j])
+            else:
+                new_sents.append(sents[j])
         with open(data_dir + '/sent_' + opts.mode + '.predV2', 'w') as out:
             for s in new_sents:
                 out.write(s+'\n')
