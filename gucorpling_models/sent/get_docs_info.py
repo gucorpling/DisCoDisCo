@@ -24,7 +24,7 @@ for n in names:
         all_tokens = []
         lines = io.open(file, encoding="utf8").read().strip().split("\n")
         for line in lines:
-            if line.startswith("# newdoc id"):
+            if line.startswith("# newdoc id") or line.startswith("#newdoc id"):
                 doc_names.append(line.split(' = ')[1].strip())
                 all_tokens.append([])
             if "\t" in line:
