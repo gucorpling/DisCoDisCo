@@ -8,8 +8,8 @@ p.add_argument("-d", "--dir", help="path to directory which ONLY containing data
 p.add_argument("-o", "--out", help="path to output directory")
 opts = p.parse_args()
 
-DATA_DIR = opts.dir+'/'
-OUT_DIR = opts.out+'/'
+DATA_DIR = opts.dir
+OUT_DIR = opts.out
 
 if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)

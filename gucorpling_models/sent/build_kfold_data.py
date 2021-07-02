@@ -9,9 +9,9 @@ p.add_argument("-i", "--inf", help="path to output directory from get_docs_info.
 p.add_argument("-o", "--out", help="path to output directory for folds")
 opts = p.parse_args()
 
-DATA_DIR = opts.dir+'/'
-D_DIR = opts.out+'/'
-S_DIR = opts.inf+'/'
+DATA_DIR = opts.dir
+D_DIR = opts.out
+S_DIR = opts.inf
 
 names = os.listdir(DATA_DIR + "/")
 p = "_train"

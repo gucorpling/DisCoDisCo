@@ -11,7 +11,7 @@ opts = p.parse_args()
 DATA_DIR = opts.dir
 OUT_DIR = opts.out
 names = os.listdir(DATA_DIR + "/")
-partition = ["_train", "_dev", "_test"]
+partition = ["_train", "_dev"]
 if not os.path.isdir(OUT_DIR):
     os.makedirs(OUT_DIR)
 for n in names:
