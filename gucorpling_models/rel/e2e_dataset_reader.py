@@ -1,7 +1,7 @@
 import csv
 import io, os
 import math
-from typing import Dict, Iterable, Optional, List, Tuple
+from typing import Dict, Iterable, Optional, List, Tuple, Any
 from pprint import pprint
 from collections import defaultdict
 
@@ -13,6 +13,8 @@ from allennlp.data import DatasetReader, Instance, Field
 from allennlp.data.fields import LabelField, TextField, TensorField, ArrayField, ListField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer, PretrainedTransformerMismatchedIndexer
 from allennlp.data.tokenizers import Token, Tokenizer, PretrainedTransformerTokenizer
+from gucorpling_models.features import Feature, get_feature_field
+from gucorpling_models.rel.features import process_relfile
 from gucorpling_models.seg.gumdrop_reader import read_conll_conn
 from gucorpling_models.seg.dataset_reader import group_by_sentence
 
@@ -30,31 +32,8 @@ def get_span_indices(unit_toks, s_toks, max_length: None):
         for chunk in splitted:
             s, e = int(chunk.split("-")[0]) - s_start, int(chunk.split("-")[-1]) - s_start
             span.append((s, e))
-
-        # if max_length and cur_span[-1][-1] >= max_length:
-        #     REPLACED_FLAG = True
-        #     start_idx = cur_span[0][0]
-        # else:
-        #     start_idx = 0
-        # for chunk in cur_span:
-        #     s, e = chunk[0], chunk[1]
-        #     span.append((s-start_idx, e-start_idx))
-            # if s >= max_length:
-            #     continue
-            # elif e >= max_length:
-            #     span.append((s, e-1))
-            #     continue
-            # else:
-            #     span.append((s, e))
-        # a = 1
     else:
         left, right = int(unit_toks.split("-")[0])-s_start, int(unit_toks.split("-")[-1])-s_start
-        # if max_length and right >= max_length:
-        #     REPLACED_FLAG = True
-        #     start_idx = left
-        # else:
-        #     start_idx = 0
-        # span = [(left-start_idx, right-start_idx)] if right-start_idx < max_length else [(left-start_idx, max_length-2)]
         span = [(left, right)]
     return span
 
@@ -72,12 +51,14 @@ class Disrpt2021RelReader(DatasetReader):
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
         max_length: int = None,
+        features: Dict[str, Feature] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.tokenizer = tokenizer
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self.max_length = max_length  # useful for BERT
+        self.features = features
 
     def tokenize_with_subtoken_map(self, text, span):
         subtoken_map = [0]
@@ -129,15 +110,16 @@ class Disrpt2021RelReader(DatasetReader):
     @overrides
     def text_to_instance(
         self,  # type: ignore
-        # unit1_txt: str,
+        unit1_txt: str,
         unit1_sent: str,
-        # unit2_txt: str,
+        unit2_txt: str,
         unit2_sent: str,
-        span_dist: int,
+        # span_dist: int,
         unit1_span_indices: list,
         unit2_span_indices: list,
         dir: str,
         label: str = None,
+        features: Dict[str, Any] = None
     ) -> Instance:
 
         unit1_sent_tokens, new_unit1_span_indices, unit1_span_mask = self.tokenize_with_subtoken_map(unit1_sent, unit1_span_indices)
@@ -161,8 +143,17 @@ class Disrpt2021RelReader(DatasetReader):
             "unit2_span_mask": TensorField(torch.tensor(unit2_span_mask[:self.max_length]) > 0),
             "unit2_span_indices": TensorField(torch.tensor(new_unit2_span_indices)),
             "direction": LabelField(dir, label_namespace="direction_labels"),
-            "distance": TensorField(torch.tensor(span_dist))
+            # "distance": TensorField(torch.tensor(span_dist))
         }
+
+        # read in handcrafted features
+        if self.features is not None:
+            for feature_name, feature_config in self.features.items():
+                if feature_name not in features:
+                    raise Exception(f"Feature {feature_name} not found. Pair:\n  {unit1_txt}\n  {unit2_txt}")
+                feature_data = features[feature_name]
+                fields[feature_name] = get_feature_field(feature_config, feature_data)
+
         if label:
             fields["relation"] = LabelField(label, label_namespace="relation_labels")
         return Instance(fields)
@@ -172,29 +163,39 @@ class Disrpt2021RelReader(DatasetReader):
     def _read(self, file_path: str) -> Iterable[Instance]:
         assert file_path.endswith(".rels")
 
+        corpus = file_path.split(os.sep)[-1].split('_')[0]
+        features = process_relfile(
+            file_path,
+            file_path.replace(".rels", ".conllu"),
+            corpus
+        )
+
         with io.open(file_path, "r", encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
-            for row in reader:
+            for i, row in enumerate(reader):
                 # doc = row["doc"]
                 unit1_toks = row["unit1_toks"]
                 s1_toks = row["s1_toks"]
                 unit2_toks = row["unit2_toks"]
                 s2_toks = row["s2_toks"]
 
-                span_dist = get_span_dist(unit1_toks, unit2_toks)
-                span_dist = round(math.log(abs(span_dist)+1, 2))   # smooth the distance
+                # span_dist = get_span_dist(unit1_toks, unit2_toks)
+                # span_dist = round(math.log(abs(span_dist)+1, 2))   # smooth the distance
                 unit1_span_indices = get_span_indices(unit1_toks, s1_toks, self.max_length)
                 unit2_span_indices = get_span_indices(unit2_toks, s2_toks, self.max_length)
 
                 # try:
                 yield self.text_to_instance(
+                    unit1_txt=row["unit1_txt"],
                     unit1_sent=row["unit1_sent"],
+                    unit2_txt=row["unit2_txt"],
                     unit2_sent=row["unit2_sent"],
-                    span_dist=span_dist,
+                    # span_dist=span_dist,
                     unit1_span_indices=unit1_span_indices,
                     unit2_span_indices=unit2_span_indices,
                     dir=row["dir"],
                     label=row["label"],
+                    features=features[i]
                 )
                 # except:
                 #     with open('bug.txt', 'a', encoding='utf-8') as f:

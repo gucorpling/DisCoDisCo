@@ -14,6 +14,7 @@ from allennlp.modules import Seq2SeqEncoder, TimeDistributed, TextFieldEmbedder
 from allennlp.modules.time_distributed import TimeDistributed
 from allennlp.nn import util, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
+from gucorpling_models.features import Feature, get_feature_modules
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,10 @@ class E2eResolver(Model):
             vocab: Vocabulary,
             text_field_embedder: TextFieldEmbedder,
             context_layer: Seq2SeqEncoder,
-            feature_size: int,
+            # feature_size: int,
             lexical_dropout: float = 0.2,
             encoder_decoder_dropout: float = 0.3,
+            features: Dict[str, Feature] = None,
             initializer: InitializerApplicator = InitializerApplicator(),
             **kwargs
     ) -> None:
@@ -51,12 +53,20 @@ class E2eResolver(Model):
             self._lexical_dropout = torch.nn.Dropout(p=lexical_dropout)
         else:
             self._lexical_dropout = lambda x: x
-        self._distance_embedding = torch.nn.Embedding(num_embeddings=20, embedding_dim=feature_size)
+        # self._distance_embedding = torch.nn.Embedding(num_embeddings=20, embedding_dim=feature_size)
         self._dir_embedding = torch.nn.Embedding(num_embeddings=2, embedding_dim=1)
+
+        # setup handwritten feature modules
+        if features is not None and len(features) > 0:
+            feature_modules, feature_dims = get_feature_modules(features, vocab)
+            self.feature_modules = feature_modules
+        else:
+            self.feature_modules = None
+            feature_dims = 0
 
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(encoder_decoder_dropout)
-        self.relation_decoder = torch.nn.Linear(context_layer.get_output_dim()*6+feature_size+1, num_relations)
+        self.relation_decoder = torch.nn.Linear(context_layer.get_output_dim()*6+feature_dims+1, num_relations)
 
         # these are stateful objects that keep track of accuracy across an epoch
         self.direction_accuracy = CategoricalAccuracy()
@@ -104,6 +114,16 @@ class E2eResolver(Model):
         span_representations = torch.cat([start_embeddings, weighted_span_embeds, end_embeddings], 1)   # [b, 3e]
         return span_representations
 
+    def _get_combined_feature_tensor(self, kwargs):
+        output_tensors = []
+        for module_key, module in self.feature_modules.items():
+            output_tensor = module(kwargs[module_key])
+            if len(output_tensor.shape) == 1:
+                output_tensor = output_tensor.unsqueeze(-1)
+            output_tensors.append(output_tensor)
+
+        combined_feature_tensor = torch.cat(output_tensors, dim=1)
+        return combined_feature_tensor
 
     @overrides
     def forward(
@@ -115,8 +135,9 @@ class E2eResolver(Model):
             unit2_span_mask: torch.Tensor,
             unit2_span_indices: torch.Tensor,
             direction: torch.Tensor,
-            distance: torch.Tensor,
+            # distance: torch.Tensor,
             relation: torch.Tensor,
+            **kwargs
     ) -> Dict[str, torch.Tensor]:
 
         sentence1_mask = util.get_text_field_mask(sentence1)
@@ -128,11 +149,14 @@ class E2eResolver(Model):
         unit1_span_representations = self._get_span_representations(embedded_unit1_sentence, unit1_span_mask, unit1_span_indices, sentence1_mask)   # [b, 3e]
         unit2_span_representations = self._get_span_representations(embedded_unit2_sentence, unit2_span_mask, unit2_span_indices, sentence2_mask)   # [b, 3e]
 
-        dist_embeds = self._distance_embedding(distance)
+        # dist_embeds = self._distance_embedding(distance)
         dir_embeds = self._dir_embedding(direction)
-        feature_embeds = torch.cat((dist_embeds, dir_embeds), -1) # [b, f]
 
-        combined = torch.cat((unit1_span_representations, unit2_span_representations, feature_embeds), 1) # [b, e*2+f]
+        # Get the features
+        # feature_embeds = torch.cat((dist_embeds, dir_embeds), -1) # [b, f]
+        features = self._get_combined_feature_tensor(kwargs)
+
+        combined = torch.cat((unit1_span_representations, unit2_span_representations, dir_embeds, features), 1) # [b, e*2+f+dir]
         self.dropout(combined)
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)
