@@ -72,13 +72,13 @@ class Disrpt2021RelSingleWContext(Model):
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        self.sep1_body_tensor = torch.rand((1, 1, self.encoder.get_input_dim())).to(device)
-        self.sep2_body_tensor = torch.rand((1, 3, self.encoder.get_input_dim())).to(device)
-        self.sep3_body_tensor = torch.rand((1, 1, self.encoder.get_input_dim())).to(device)
+        self.sep1_body_tensor = torch.rand((1, 1, self.encoder.get_input_dim())).to(self.device)
+        self.sep2_body_tensor = torch.rand((1, 3, self.encoder.get_input_dim())).to(self.device)
+        self.sep3_body_tensor = torch.rand((1, 1, self.encoder.get_input_dim())).to(self.device)
 
-        self.sep1_mask_tensor = torch.full((1, 1), False).to(device)
-        self.sep2_mask_tensor = torch.full((1, 3), False).to(device)
-        self.sep3_mask_tensor = torch.full((1, 1), False).to(device)
+        self.sep1_mask_tensor = torch.full((1, 1), False).to(self.device)
+        self.sep2_mask_tensor = torch.full((1, 3), False).to(self.device)
+        self.sep3_mask_tensor = torch.full((1, 1), False).to(self.device)
 
         if initializer:
             initializer(self)
