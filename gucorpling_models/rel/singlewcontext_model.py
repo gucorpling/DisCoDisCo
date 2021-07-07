@@ -118,19 +118,19 @@ class Disrpt2021RelSingleWContext(Model):
             embedded_unit1_body,
             self.sep1_body_tensor.expand(curr_batch_size, -1, -1),
             embedded_unit2_body,
-            self.sep2_body_tensor.expand(curr_batch_size, -1, -1),
-            embedded_unit1_sentence,
-            self.sep3_body_tensor.expand(curr_batch_size, -1, -1),
-            embedded_unit2_sentence
+            # self.sep2_body_tensor.expand(curr_batch_size, -1, -1),
+            # embedded_unit1_sentence,
+            # self.sep3_body_tensor.expand(curr_batch_size, -1, -1),
+            # embedded_unit2_sentence
         ), 1)
         combined_mask = torch.cat((
             util.get_text_field_mask(unit1_body),
             self.sep1_mask_tensor.expand(curr_batch_size, -1),
             util.get_text_field_mask(unit2_body),
-            self.sep2_mask_tensor.expand(curr_batch_size, -1),
-            util.get_text_field_mask(unit1_sentence),
-            self.sep3_mask_tensor.expand(curr_batch_size, -1),
-            util.get_text_field_mask(unit2_sentence),
+            # self.sep2_mask_tensor.expand(curr_batch_size, -1),
+            # util.get_text_field_mask(unit1_sentence),
+            # self.sep3_mask_tensor.expand(curr_batch_size, -1),
+            # util.get_text_field_mask(unit2_sentence),
         ), 1)
 
         # Encode the text. Shape: (batch_size, encoder_output_dim)
