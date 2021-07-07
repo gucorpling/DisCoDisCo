@@ -69,6 +69,14 @@ class Disrpt2021RelSingleWContext(Model):
 
         # convenience dict mapping relation indices to labels
         self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")
+        
+        self.sep1_body_tensor = torch.rand((32, 1, self.encoder.get_input_dim()))
+        self.sep2_body_tensor = torch.rand((32, 3, self.encoder.get_input_dim()))
+        self.sep3_body_tensor = torch.rand((32, 1, self.encoder.get_input_dim()))
+
+        self.sep1_mask_tensor = torch.full((32, 1), False)
+        self.sep2_mask_tensor = torch.full((32, 3), False)
+        self.sep3_mask_tensor = torch.full((32, 1), False)
 
         if initializer:
             initializer(self)
@@ -101,8 +109,27 @@ class Disrpt2021RelSingleWContext(Model):
         embedded_unit1_sentence = self.embedder(unit1_sentence)
         embedded_unit2_sentence = self.embedder(unit2_sentence)
 
-        embedded_combined_body = torch.cat((embedded_unit1_body, embedded_unit2_body), 1)
-        combined_mask = torch.cat((util.get_text_field_mask(unit1_body), util.get_text_field_mask(unit2_body)), 1)
+        # embedded_combined_body = torch.cat((embedded_unit1_body, embedded_unit2_body), 1)
+        # combined_mask = torch.cat((util.get_text_field_mask(unit1_body), util.get_text_field_mask(unit2_body)), 1)
+
+        embedded_combined_body = torch.cat((
+            embedded_unit1_body,
+            self.sep1_body_tensor,
+            embedded_unit2_body,
+            self.sep2_body_tensor,
+            embedded_unit1_sentence,
+            self.sep3_body_tensor,
+            embedded_unit2_sentence
+        ), 1)
+        combined_mask = torch.cat((
+            util.get_text_field_mask(unit1_body),
+            self.sep1_mask_tensor,
+            util.get_text_field_mask(unit2_body),
+            self.sep2_mask_tensor,
+            util.get_text_field_mask(unit1_sentence),
+            self.sep3_mask_tensor,
+            util.get_text_field_mask(unit2_sentence),
+        ), 1)
 
         # Encode the text. Shape: (batch_size, encoder_output_dim)
         encoded_combined_body = self.encoder(embedded_combined_body, combined_mask)
