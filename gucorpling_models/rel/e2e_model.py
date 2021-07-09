@@ -14,6 +14,7 @@ from allennlp.modules import Seq2SeqEncoder, TimeDistributed, TextFieldEmbedder
 from allennlp.modules.time_distributed import TimeDistributed
 from allennlp.nn import util, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.models.archival import archive_model, load_archive
 from gucorpling_models.features import Feature, get_feature_modules
 
 logger = logging.getLogger(__name__)
@@ -154,9 +155,11 @@ class E2eResolver(Model):
 
         # Get the features
         # feature_embeds = torch.cat((dist_embeds, dir_embeds), -1) # [b, f]
-        features = self._get_combined_feature_tensor(kwargs)
-
-        combined = torch.cat((unit1_span_representations, unit2_span_representations, dir_embeds, features), 1) # [b, e*2+f+dir]
+        if self.feature_modules:
+            features = self._get_combined_feature_tensor(kwargs)
+            combined = torch.cat((unit1_span_representations, unit2_span_representations, dir_embeds, features), 1) # [b, e*2+f+dir]
+        else:
+            combined = torch.cat((unit1_span_representations, unit2_span_representations, dir_embeds), 1)  # [b, e*2+dir]
         self.dropout(combined)
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)
