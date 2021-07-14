@@ -79,6 +79,8 @@ class Disrpt2021RelSingleWContext(Model):
         self.sep1_mask_tensor = torch.full((1, 1), False).to(self.device)
         self.sep2_mask_tensor = torch.full((1, 3), False).to(self.device)
         self.sep3_mask_tensor = torch.full((1, 1), False).to(self.device)
+        
+        self.unit_linear = torch.nn.Linear(self.encoder.get_input_dim()+1, self.encoder.get_input_dim())
 
         if initializer:
             initializer(self)
@@ -94,6 +96,26 @@ class Disrpt2021RelSingleWContext(Model):
         combined_feature_tensor = torch.cat(output_tensors, dim=1)
         return combined_feature_tensor
 
+    def body_in_sent_position(self, body, sentence):
+        body_d1, body_d2 = body['fasttext']['tokens'].shape
+        sentence_d1, sentence_d2 = sentence['fasttext']['tokens'].shape
+        assert body_d1 == sentence_d1
+        position_tensors = []
+        for i in range(sentence_d1):
+            sentence_end = [int(idx) for idx, x in enumerate(sentence['fasttext']['tokens'][i, :].tolist()) if x==0.0]
+            sentence_end = sentence_end[0] if len(sentence_end)>0 else sentence_d2
+            body_end = [int(idx) for idx, x in enumerate(body['fasttext']['tokens'][i, :].tolist()) if x == 0.0]
+            body_end = body_end[0] if len(body_end) > 0 else body_d2
+            pos_body_start = 0
+            for j in range(sentence_end-body_end):
+                if sentence['fasttext']['tokens'][i, j:j+body_end].tolist() == body['fasttext']['tokens'][i, :body_end].tolist():
+                    pos_body_start = j
+                    break
+            position_tensor = [1]* pos_body_start + [2]*(body_end) + [3]*(sentence_end-body_end) + [4]*(sentence_d2-sentence_end)
+            position_tensors.append(position_tensor)
+        position_tensors = torch.Tensor(position_tensors).to(self.device)
+        return position_tensors
+
     def forward(  # type: ignore
         self,
         unit1_body: TextFieldTensors,
@@ -106,27 +128,36 @@ class Disrpt2021RelSingleWContext(Model):
     ) -> Dict[str, torch.Tensor]:
 
         # Embed the text. Shape: (batch_size, num_tokens, embedding_dim)
+        positions_unit1 = self.body_in_sent_position(unit1_body, unit1_sentence)
+        positions_unit2 = self.body_in_sent_position(unit2_body, unit2_sentence)
         embedded_unit1_body = self.embedder(unit1_body)
         embedded_unit2_body = self.embedder(unit2_body)
         embedded_unit1_sentence = self.embedder(unit1_sentence)
         embedded_unit2_sentence = self.embedder(unit2_sentence)
+        
+        # with positions Jul 14
+        embedded_unit1_sentence = torch.cat((positions_unit1.unsqueeze(2), embedded_unit1_sentence), 2)
+        embedded_unit2_sentence = torch.cat((positions_unit2.unsqueeze(2), embedded_unit2_sentence), 2)
+        embedded_unit1_sentence = self.unit_linear(embedded_unit1_sentence)
+        embedded_unit2_sentence = self.unit_linear(embedded_unit2_sentence)
 
         # embedded_combined_body = torch.cat((embedded_unit1_body, embedded_unit2_body), 1)
         # combined_mask = torch.cat((util.get_text_field_mask(unit1_body), util.get_text_field_mask(unit2_body)), 1)
         curr_batch_size = embedded_unit1_body.shape[0]
         embedded_combined_body = torch.cat((
-            embedded_unit1_body,
+            embedded_unit1_sentence,
             self.sep1_body_tensor.expand(curr_batch_size, -1, -1),
-            embedded_unit2_body,
+            embedded_unit2_sentence,
             # self.sep2_body_tensor.expand(curr_batch_size, -1, -1),
             # embedded_unit1_sentence,
             # self.sep3_body_tensor.expand(curr_batch_size, -1, -1),
             # embedded_unit2_sentence
         ), 1)
+        
         combined_mask = torch.cat((
-            util.get_text_field_mask(unit1_body),
+            util.get_text_field_mask(unit1_sentence),
             self.sep1_mask_tensor.expand(curr_batch_size, -1),
-            util.get_text_field_mask(unit2_body),
+            util.get_text_field_mask(unit2_sentence),
             # self.sep2_mask_tensor.expand(curr_batch_size, -1),
             # util.get_text_field_mask(unit1_sentence),
             # self.sep3_mask_tensor.expand(curr_batch_size, -1),
