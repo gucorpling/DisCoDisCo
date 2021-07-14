@@ -112,7 +112,10 @@ def get_case(text,lang):
 
 def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=False):
     lang = corpus.split(".")[0]
-    stop_list = stop[lang]
+    try:
+        stop_list = stop[lang]
+    except:
+        stop_list = []
 
     if not as_string:
         infile = io.open(infile,encoding="utf8").read().strip()
@@ -150,7 +153,8 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
             fields = line.split("\t")
             if "-" in fields[0] or "." in fields[0]:
                 continue
-            head = 0 if fields[6] == "0" else int(fields[6]) + offset
+#             head = 0 if fields[6] == "0" else int(fields[6]) + offset
+            head = 0 if fields[6] in ["0", "", "_"] else int(fields[6]) + offset
             tok = Token(toknum, fields[0], fields[4], head, fields[7], speaker)
             tokmap[docname][toknum] = tok
             toknum += 1
