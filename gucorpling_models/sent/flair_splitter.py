@@ -233,6 +233,8 @@ class FlairSentSplitter:
             embd="GroNLP/bert-base-dutch-cased"
         elif "rus" in lang:
             embd="blinoff/roberta-base-russian-v0"
+        elif "fas" in lang:
+            embd = "HooshvareLab/bert-base-parsbert-uncased"
 
 
         # initialize embeddings

@@ -36,6 +36,9 @@ def get_stanza_model(lang):
     elif lang == 'tur':
         stanza.download('tr')
         nlp = stanza.Pipeline(lang='tr', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
+    elif lang == "fas":
+        stanza.download('fa')
+        nlp = stanza.Pipeline(lang='fa', processors='tokenize,pos,lemma', tokenize_pretokenized=True)
 
     return nlp
 
@@ -113,7 +116,7 @@ if __name__ == "__main__":
                    default="dev")
     opts = p.parse_args()
 
-    folders = glob(opts.file+'/' + '*/')
+    folders = glob(opts.file + '/' + '*/')
     for data_dir in folders:
         with open(data_dir + '/sent_' + opts.mode + '.predV2', 'r') as inp:
             lang = data_dir.split('/')[-2].split('.')[0]
@@ -128,7 +131,7 @@ if __name__ == "__main__":
                 elif line.startswith('</s>'):
                     continue
                 else:
-                    if len(sentences)==0:
+                    if len(sentences) == 0:
                         print('issue with first sentence in predictions')
                         sentences.append([])
                     sentences[-1].append(line.rstrip())
@@ -144,26 +147,30 @@ if __name__ == "__main__":
                 tok_index = 0
                 doc_index = 0
                 for i in range(start, len(sentences)):
-                    #import pdb; pdb.set_trace();
+                    # import pdb; pdb.set_trace();
                     lns = str(data.sentences[i]).split('\n')
                     for j in range(len(sentences[i])):
                         if tok_index == len(inf['toks'][doc_index]):
                             if not st.endswith('\n\n'):
-                                st+= '\n'
+                                st += '\n'
                             st += '# newdoc id = ' + inf['docs'][doc_index + 1] + '\n'
                             tok_index = 0
                             doc_index += 1
                         ann = lns[j].split('\t')
                         if ann[1] != inf['toks'][doc_index][tok_index]:
-                            if not (ann[1] == '&' and inf['toks'][doc_index][tok_index]=='&amp;'):
-                                import pdb; pdb.set_trace();
+                            if not (ann[1] == '&' and inf['toks'][doc_index][tok_index] == '&amp;'):
+                                import pdb;
+
+                                pdb.set_trace();
                                 print("tokens not matching")
                                 sys.exit()
-                        #import pdb; pdb.set_trace();
-                        res = ann[0] + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + tags['pos1'][i][
-                            j] + '\t' + tags['pos2'][i][j] + '\t' + ann[5] + '\t' + ann[6] + '\t' + ann[7] + '\t' + \
+                        # import pdb; pdb.set_trace();
+                        res = ann[0] + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + \
+                              tags['pos1'][i][
+                                  j] + '\t' + tags['pos2'][i][j] + '\t' + ann[5] + '\t' + ann[6] + '\t' + ann[
+                                  7] + '\t' + \
                               ann[8] + '\t' + ann[9] + '\n'
-                        tok_index+=1
-                        st+=res
-                    st+='\n'
+                        tok_index += 1
+                        st += res
+                    st += '\n'
                 of.write(st)
