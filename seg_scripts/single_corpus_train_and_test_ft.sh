@@ -5,7 +5,7 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 CORPUS="$1"
-CORPUS_DIR="data/2019/${1}"
+CORPUS_DIR="data/2021/${1}"
 MODEL_DIR=${2:-models}/${CORPUS}_seg_bert_baseline_ft
 if [[ ! -d $CORPUS_DIR ]]; then
   echo "Corpus \"$CORPUS_DIR\" not found"
@@ -22,6 +22,8 @@ if [[ "$CORPUS" == "eng"* ]]; then
   export EMBEDDING_DIMS=1024
   #export EMBEDDING_MODEL_NAME="roberta-large"
   export EMBEDDING_MODEL_NAME="google/electra-large-discriminator"
+elif [[ "$CORPUS" == "fas"* ]]; then
+  export EMBEDDING_MODEL_NAME="HooshvareLab/bert-fa-base-uncased"
 #elif [[ "$CORPUS" == "deu"* ]]; then
 #  #export EMBEDDING_DIMS=1024
 #  #export EMBEDDING_MODEL_NAME="deepset/gelectra-large"
@@ -66,6 +68,8 @@ elif [[ "$CORPUS" == "deu"* ]]; then
   export FASTTEXT_EMBEDDING_FILE="embeddings/cc.de.300.vec"
 elif [[ "$CORPUS" == "eus"* ]]; then
   export FASTTEXT_EMBEDDING_FILE="embeddings/cc.eu.300.vec"
+elif [[ "$CORPUS" == "fas"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fa.300.vec"
 elif [[ "$CORPUS" == "fra"* ]]; then
   export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fr.300.vec"
 elif [[ "$CORPUS" == "nld"* ]]; then
