@@ -135,7 +135,7 @@ class Disrpt2021SegReader(DatasetReader):
         return Instance(fields)
 
     def _read(self, file_path: str) -> Iterable[Instance]:
-        assert file_path.endswith(".conll")
+        assert file_path.endswith(".conll") or file_path.endswith(".conllu")
 
         conll_file_path = file_path
         # tok_file_path = rels_file_path.replace(".conll", ".tok")
