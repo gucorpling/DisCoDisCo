@@ -94,8 +94,8 @@ echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Training on $CORPUS"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
-export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conll"
-export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conll"
+export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.conllu"
+export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.conllu"
 echo $TRAIN_DATA_PATH
 allennlp train \
   configs/seg/baseline/bert_baseline_ft.jsonnet \
@@ -107,8 +107,8 @@ echo "# Testing on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
 JSON_PRED_PATH="${MODEL_DIR}/output_test.jsonl"
-CONLL_PRED_PATH="${MODEL_DIR}/output_test.conll"
-CONLL_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_test.conll"
+CONLL_PRED_PATH="${MODEL_DIR}/output_test.conllu"
+CONLL_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_test.conllu"
 
 allennlp predict \
   "${MODEL_DIR}/model.tar.gz" \
