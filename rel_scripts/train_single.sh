@@ -22,8 +22,10 @@ if [[ -d $MODEL_DIR ]]; then
 fi
 
 # use language-specific berts if we can
-#export EMBEDDING_DIMS=768
-if [[ "$CORPUS" == "eng"* ]]; then
+export EMBEDDING_DIMS=768
+if [[ "$CORPUS" == "eng.sdrt.stac"* ]]; then
+	export EMBEDDING_MODEL_NAME="bert-base-uncased"
+elif [[ "$CORPUS" == "eng"* ]]; then
 	export EMBEDDING_MODEL_NAME="SpanBERT/spanbert-base-cased"
 #    export EMBEDDING_MODEL_NAME="bert-base-cased"
 elif [[ "$CORPUS" == "deu"* ]]; then
@@ -44,9 +46,13 @@ elif [[ "$CORPUS" == "tur"* ]]; then
 	export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 elif [[ "$CORPUS" == "rus"* ]]; then
 	export EMBEDDING_MODEL_NAME="blinoff/roberta-base-russian-v0"
+elif [[ "$CORPUS" == "fas"* ]]; then
+	export EMBEDDING_MODEL_NAME="HooshvareLab/bert-fa-zwnj-base"
 else
 	export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
 fi
+
+# export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
 
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
@@ -60,22 +66,43 @@ allennlp train \
 	configs/rel/e2e/e2e.jsonnet \
 	-s "$MODEL_DIR" \
 
+# echo ""
+# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+# echo "# Predicting on ${CORPUS}"
+# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+# echo ""
+# export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
+# echo $VALIDATION_DATA_PATH
+# allennlp predict \
+#         $MODEL_DIR \
+#         $VALIDATION_DATA_PATH \
+#         --use-dataset-reader \
+#         --output-file tmp/dev_rel_e2e_renovated/predictions_e2e_rel_${CORPUS}.json
+
+# echo ""
+# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+# echo "# Evaluating on ${CORPUS}"
+# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+# echo ""
+# python utils/e2e_metrics.py tmp/dev_rel_e2e_renovated/predictions_e2e_rel_${CORPUS}.json
+
+
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Predicting on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
-export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
+export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_test.rels"
 echo $VALIDATION_DATA_PATH
 allennlp predict \
         $MODEL_DIR \
         $VALIDATION_DATA_PATH \
         --use-dataset-reader \
-        --output-file tmp/predictions_e2e_rel_${CORPUS}.json
+        --output-file tmp/test_rel_e2e_multilingualBERT_renovated/predictions_e2e_rel_${CORPUS}.json
 
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Evaluating on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
-python utils/e2e_metrics.py tmp/predictions_e2e_rel_${CORPUS}.json
+python utils/e2e_metrics.py tmp/test_rel_e2e_multilingualBERT_renovated/predictions_e2e_rel_${CORPUS}.json
