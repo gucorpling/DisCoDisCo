@@ -65,6 +65,8 @@ def get_genre(corpus, doc):
             return "TERM"
         else:
             return doc.split("_")[0]
+    if corpus == "fas.rst.prstc":
+        return doc[0:6]
     print("Unknown corpus: " + corpus)
     return "_"
 
