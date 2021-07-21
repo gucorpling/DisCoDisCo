@@ -220,19 +220,7 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
                 del feats["label"]
                 del feats["orig_label"]
                 del feats["doc"]
-                
-                # Delete lexical features since these are already captured by contextualized embeddings
-                del feats["u1_func"]
-                del feats["u1_pos"]
-                del feats["u1_depdir"]
-                del feats["u1_length"]
-                del feats["u1_speaker"]
-                del feats["u2_func"]
-                del feats["u2_pos"]
-                del feats["u2_depdir"]
-                del feats["u2_length"]
-                del feats["u2_speaker"]
-                del feats["lex_overlap_length"]
+
             output.append(feats)
 
     return output
