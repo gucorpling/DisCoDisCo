@@ -1,6 +1,7 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2 + 300;
 local encoder_hidden_dim = 256;
+local max_length = 512;
 
 local features = {
     "nuc_children": {"source_key": "nuc_children"},
@@ -42,6 +43,7 @@ local encoder = {
 {
     "dataset_reader" : {
         "type": "disrpt_2021_rel",
+        "max_tokens": 512,
         "token_indexers": {
             "tokens": {
                 "type": "pretrained_transformer",
