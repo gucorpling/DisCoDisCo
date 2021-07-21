@@ -18,7 +18,7 @@ if not os.path.exists(OUT_DIR):
     os.makedirs(OUT_DIR)
 
 names = os.listdir(DATA_DIR + "/")
-partition = ["_train", "_dev"]
+partition = ["_train", "_dev","_test"]
 
 for n in names:
     if not os.path.isdir(DATA_DIR + n + "/"):

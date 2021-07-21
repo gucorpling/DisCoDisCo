@@ -42,7 +42,7 @@ for n in names:
         with io.open(dest + n + "_train.conllu", "w", encoding="utf8", newline="\n") as ftrain:
             with io.open(dest + n + "_test.conllu", "w", encoding="utf8", newline="\n") as ftest:
                 for line in lines:
-                    if line.startswith("# newdoc id"):
+                    if line.startswith("# newdoc id") or line.startswith("#newdoc id"):
                         name = line.split(' = ')[1].strip()
                         if name in test_docs:
                             hnd = ftest

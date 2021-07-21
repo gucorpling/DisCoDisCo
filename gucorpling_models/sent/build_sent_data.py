@@ -27,7 +27,7 @@ for n in names:
         lines = io.open(file, encoding="utf8").read().strip().split("\n")
 
         for line in lines:
-            if line.startswith("# newdoc id"):
+            if line.startswith("# newdoc id") or line.startswith("#newdoc id"):
                 sent = "B-SENT"
                 data[p].append("-DOCSTART- X")
                 data[p].append("")
