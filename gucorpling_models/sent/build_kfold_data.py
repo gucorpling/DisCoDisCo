@@ -25,15 +25,15 @@ for n in names:
     with open(path + 'docs_tokens' + p + '.json') as f:
         data = json.load(f)
     docs_len = len(data['docs'])
-    d = int(docs_len / 4)
-    n_folds = 5
-    for i in range(5):
+    n_folds = 4
+    d = int(docs_len / n_folds)
+    for i in range(n_folds):
         if not os.path.exists(D_DIR + str(i)):
             os.makedirs(D_DIR + str(i))
         dest = D_DIR + str(i) + '/' + n + '/'
         os.makedirs(dest)
         os.system("cp " + file_ + "_dev.conllu " + dest)
-        if i == 4:
+        if i == n_folds-1:
             test_docs = data['docs'][d * i:]
         else:
             test_docs = data['docs'][d * i:d * (i + 1)]
