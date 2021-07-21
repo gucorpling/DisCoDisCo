@@ -24,7 +24,7 @@ and put them in the `embeddings/` folder.
 
 Note: if you're a member of GU Corpling, you can download zips for the 
 [2019](https://drive.google.com/file/d/1fkGTBJT7C--vfINi-iEY-6RJQ9HsRXoX/view?usp=sharing) 
-and [2021](https://drive.google.com/file/d/1cefWFFaO9Hb4yuONSdbelVVDausotKLD/view?usp=sharing) data.
+and [2021](https://drive.google.com/file/d/1wDmv6TzZqUwnw1Csn4Yz66uF1UYV-K-L/view?usp=sharing) data.
 
 ## Experiments
 
