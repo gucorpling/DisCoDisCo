@@ -4,9 +4,10 @@ if [ $# -eq 0 ]; then
   echo "Supply the name of a corpus"
   exit 1
 fi
+CURRENTTIME=`date +%s`
 CORPUS="$1"
 CORPUS_DIR="sharedtask2021/data/${1}"
-MODEL_DIR=${2:-models}/${CORPUS}_rel_bert_singlewcontext
+MODEL_DIR=${2:-models}/${CORPUS}_rel_bert_singlewcontext_${CURRENTTIME}
 if [[ ! -d $CORPUS_DIR ]]; then
   echo "Corpus \"$CORPUS_DIR\" not found"
   exit 1
@@ -96,3 +97,4 @@ echo "# Scoring on ${CORPUS}"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
 python gucorpling_models/rel/e2e_metrics.py $JSON_PRED_PATH
+echo "Model Path is \"$MODEL_DIR\""
