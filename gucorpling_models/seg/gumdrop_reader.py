@@ -31,7 +31,15 @@ class DepFeatures:
 
         # [s_id, wid, line_id ,head, deprel, word]
         feats_tups = [
-            tuple([x["s_id"], x["wid"], x["line_id"], int(x["head"]), x["deprel"], x["word"]]) for x in train_feats
+            tuple([
+                x["s_id"],
+                 x["wid"],
+                 x["line_id"],
+                 x["head"],
+                 x["deprel"],
+                 x["word"]
+            ])
+            for x in train_feats
         ]
         num_s = sorted(list(set([x[0] for x in feats_tups])))
         feats_parents = defaultdict(list)
@@ -39,6 +47,10 @@ class DepFeatures:
         all_feats_s = defaultdict(list)
 
         sorted_feats_s = sorted([x for x in feats_tups], key=lambda x: x[1])
+
+        # TODO: why is this necessary? not all tokens have this key set
+        for x in train_feats:
+            x["parentclauses"] = ""
 
         # Do only one pass through data to break up into sentences
         for x in sorted_feats_s:
@@ -54,17 +66,17 @@ class DepFeatures:
             # looping through tokens in a sentence
             wid2lineid = {}
             for t in feats_s:
-
                 # finding all (grand)parents (grand-heads)
                 wid = t[1]
                 head = t[3]
                 wid2lineid[wid] = t[2]
-                while head != 0:
-                    head_t = [x for x in feats_s if x[1] == head][0]
+                while int(head) != 0:
+                    head_t = [x for x in feats_s if str(x[1]) == str(head)][0]
                     feats_parents[t].append(head_t)
                     head = head_t[3]
 
-            for id_t, t in enumerate(feats_s):
+            for t in feats_s:
+                wid = t[1]
                 parentrels = [x[4] for x in feats_parents[t]]
                 parentcls = []
                 for r in parentrels:
@@ -72,7 +84,7 @@ class DepFeatures:
                         if r.startswith(dr):
                             parentcls.append(r)
                             continue
-                train_feats[wid2lineid[id_t + 1]]["parentclauses"] = "|".join(parentcls)
+                train_feats[wid2lineid[wid]]["parentclauses"] = "|".join(parentcls)
 
             # loop through clausal_deprels (non-conj & conj) and create BIO list for sentence tokens
             dr_d = defaultdict(list)
@@ -141,7 +153,8 @@ class DepFeatures:
 
             # add non-conj to train_feats
             for id_l, l in enumerate(feats_l):
-                train_feats[wid2lineid[id_l + 1]]["depchunk"] = l
+                wid = feats_s[id_l][1]
+                train_feats[wid2lineid[wid]]["depchunk"] = l
 
             # conj
             for id_l, l in enumerate(feats_conjl):
@@ -159,7 +172,8 @@ class DepFeatures:
 
             # add conj to train_feats
             for id_l, l in enumerate(feats_conjl):
-                train_feats[wid2lineid[id_l + 1]]["conj"] = l
+                wid = feats_s[id_l][1]
+                train_feats[wid2lineid[wid]]["conj"] = l
 
             # sys.stderr.write('\r Adding deprel BIEO features to train_feats %s ### o Sentence %d' %(corpus, s))
 
@@ -266,6 +280,7 @@ CORPORA = [
     "eng.sdrt.stac",
     "eus.rst.ert",
     "fra.sdrt.annodis",
+    "fas.rst.prstc",
     "nld.rst.nldt",
     "por.rst.cstn",
     "rus.rst.rrt",
@@ -303,7 +318,10 @@ def read_conll_conn(
     if as_text:
         lines = input_file_path.split("\n")
     else:
-        lines = io.open(input_file_path, encoding="utf8").readlines()
+        try:
+            lines = io.open(input_file_path, encoding="utf8").readlines()
+        except:
+            lines = io.open(input_file_path + "u", encoding="utf8").readlines()
     docname = input_file_path if len(input_file_path) < 100 else "doc1"
     output = []  # List to hold dicts of each observation's features
     cache = []  # List to hold current sentence tokens before adding complete sentence features for output
@@ -333,10 +351,19 @@ def read_conll_conn(
     for r, line in enumerate(lines):
         if "\t" in line:
             fields = line.split("\t")
+            while len(fields) < 10:
+                fields.append("_")
             if "-" in fields[0]:  # conllu super-token
                 continue
             total += 1
             word, lemma, pos, cpos, feats, head, deprel = fields[1:-2]
+            if "." in fields[0]:
+                token_id = float(fields[0])
+                pieces = fields[8].split(":")
+                head, deprel = pieces[0], ":".join(pieces[1:])
+                head = float(head) if "." in head else int(head)
+            else:
+                token_id = int(fields[0])
             if mode == "seg":
                 if "BeginSeg=Yes" in fields[-1]:
                     label = "BeginSeg"
@@ -366,7 +393,7 @@ def read_conll_conn(
                 feat_string = "_"
             vocab[word] += 1
             case = get_case(word)
-            head_dist = int(fields[0]) - int(head)
+            head_dist = int(token_id) - int(head)
             if len(word.strip()) == 0:
                 raise ValueError("! Zero length word at line " + str(r) + "\n")
             toks.append(word)
@@ -397,7 +424,7 @@ def read_conll_conn(
                     "last": last_char,
                     "tok_id": tok_id,
                     "genre": genre,
-                    "wid": int(fields[0]),
+                    "wid": token_id,
                     "quote": in_quotes,
                     "bracket": in_brackets,
                     "morph": feat_string,

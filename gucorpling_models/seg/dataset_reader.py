@@ -150,6 +150,8 @@ class Disrpt2021SegReader(DatasetReader):
         sentence_tokens = [
             preprocess_text(file_path, [td["word"] for td in sentence]) for sentence in token_dicts_by_sentence
         ]
+        # Tokens shouldn't have space in them--if they do replace them with underscores
+        sentence_tokens = [[token.replace(" ", "_") for token in sentence] for sentence in sentence_tokens]
 
         # read handcrafted features provided by gumdrop code
         features = [

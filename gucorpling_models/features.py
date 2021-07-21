@@ -19,7 +19,7 @@ class TransformationFunction(Registrable):
 class NaturalLog(TransformationFunction):
     def __call__(self, xs, tokenwise):
         if tokenwise:
-            return [math.log(x) for x in xs]
+            return [math.log(x) if x != 0 else x for x in xs]
         else:
             return math.log(xs)
 
@@ -28,7 +28,7 @@ class NaturalLog(TransformationFunction):
 class NaturalLog(TransformationFunction):
     def __call__(self, xs, tokenwise):
         if tokenwise:
-            return [math.log(abs(x)) for x in xs]
+            return [math.log(abs(x)) if x != 0 else x for x in xs]
         else:
             return math.log(abs(xs))
 
