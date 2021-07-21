@@ -107,11 +107,11 @@ class Disrpt2021RelSingleWContext(Model):
             body_end = [int(idx) for idx, x in enumerate(body['fasttext']['tokens'][i, :].tolist()) if x == 0.0]
             body_end = body_end[0] if len(body_end) > 0 else body_d2
             pos_body_start = 0
-            for j in range(sentence_end-body_end):
-                if sentence['fasttext']['tokens'][i, j:j+body_end].tolist() == body['fasttext']['tokens'][i, :body_end].tolist():
+            for j in range(sentence_end-body_end+1):
+                if sentence['fasttext']['tokens'][i, j+1:j+body_end-1].tolist() == body['fasttext']['tokens'][i, 1:body_end-1].tolist():
                     pos_body_start = j
                     break
-            position_tensor = [1]* pos_body_start + [2]*(body_end) + [3]*(sentence_end-body_end) + [4]*(sentence_d2-sentence_end)
+            position_tensor = [1]* pos_body_start + [2]*(body_end) + [3]*(sentence_end-body_end-pos_body_start) + [4]*(sentence_d2-sentence_end)
             position_tensors.append(position_tensor)
         position_tensors = torch.Tensor(position_tensors).to(self.device)
         return position_tensors
