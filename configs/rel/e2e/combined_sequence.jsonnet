@@ -58,7 +58,8 @@ local features = {
       "activation": "relu"
     },
     "features": features,
-    "dropout": 0.5
+    "dropout": 0.5,
+    "combine_sequences_using_submask": false
   },
     "data_loader": {
         "batch_size": 32,

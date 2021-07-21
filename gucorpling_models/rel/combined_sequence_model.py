@@ -5,18 +5,14 @@ from typing import Any, Dict, List, Tuple
 import torch
 import torch.nn.functional as F
 from allennlp.modules.seq2seq_encoders import PytorchTransformer
-from allennlp.modules.seq2vec_encoders import LstmSeq2VecEncoder
+from allennlp.modules.seq2vec_encoders import LstmSeq2VecEncoder, BertPooler
 from overrides import overrides
 
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules.token_embedders import Embedding
-from allennlp.modules import FeedForward, GatedSum, Seq2VecEncoder
-from allennlp.modules import Seq2SeqEncoder, TimeDistributed, TextFieldEmbedder
-from allennlp.modules.time_distributed import TimeDistributed
+from allennlp.modules import TextFieldEmbedder
 from allennlp.nn import util, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.models.archival import archive_model, load_archive
 from gucorpling_models.features import Feature, get_feature_modules
 
 logger = logging.getLogger(__name__)
@@ -31,7 +27,7 @@ def weighted_sum(att, mat):
         AssertionError('Incompatible attention weights and matrix.')
 
 
-def concat_masked_sequences(s1, s2, m1, m2, sm1, sm2, combine_using_submask=True):
+def concat_masked_sequences(s1, s2, m1, m2, sm1, sm2, combine_using_submask):
     """
     First, combine two batches of masked sequences so that the sequences are flush against each other.
     For example, if we have:
@@ -134,12 +130,15 @@ class CombinedSequenceModel(Model):
             encoder_args: dict,
             dropout: float = 0.3,
             features: Dict[str, Feature] = None,
+            combine_sequences_using_submask: bool = False,
             initializer: InitializerApplicator = InitializerApplicator(),
             **kwargs
     ) -> None:
         super().__init__(vocab, **kwargs)
+        self.combine_sequences_using_submask = combine_sequences_using_submask
 
         self.embedder = text_field_embedder
+        self.bert_pooler = BertPooler(text_field_embedder._token_embedders['tokens'].config._name_or_path)
 
         # setup handwritten feature modules
         if features is not None and len(features) > 0:
@@ -167,7 +166,7 @@ class CombinedSequenceModel(Model):
 
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(dropout)
-        self.relation_decoder = torch.nn.Linear(self.seq2vec.get_output_dim(), num_relations)
+        self.relation_decoder = torch.nn.Linear(self.bert_pooler.get_output_dim() * 2 + self.seq2vec.get_output_dim(), num_relations)
 
         # these are stateful objects that keep track of accuracy across an epoch
         self.relation_accuracy = CategoricalAccuracy()
@@ -208,13 +207,17 @@ class CombinedSequenceModel(Model):
         embedded_unit1_sentence = self.embedder(sentence1)
         embedded_unit2_sentence = self.embedder(sentence2)
 
+        unit1_vec = self.bert_pooler(embedded_unit1_sentence)
+        unit2_vec = self.bert_pooler(embedded_unit2_sentence)
+
         _, combined_mask, _, _, combined_sequence = concat_masked_sequences(
             embedded_unit1_sentence,
             embedded_unit2_sentence,
             sentence1_mask,
             sentence2_mask,
             unit1_span_mask,
-            unit2_span_mask
+            unit2_span_mask,
+            combine_using_submask=self.combine_sequences_using_submask
         )
 
         dummy_shape = combined_sequence.shape[0:2] + torch.Size([self.dummy_dim])
@@ -234,8 +237,9 @@ class CombinedSequenceModel(Model):
         encoded_sequence = self.dropout(encoded_sequence)
 
         sequence_embedding = self.seq2vec(encoded_sequence, combined_mask)
+        combined_pair_embedding = torch.cat((unit1_vec, unit2_vec, sequence_embedding), dim=1)
         # Decode the concatenated vector into relation logits
-        relation_logits = self.relation_decoder(sequence_embedding)
+        relation_logits = self.relation_decoder(combined_pair_embedding)
         relation_logits = F.relu(relation_logits)
 
         output = {
