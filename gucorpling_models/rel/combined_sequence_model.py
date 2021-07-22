@@ -207,6 +207,13 @@ class CombinedSequenceModel(Model):
         sentence1_mask = util.get_text_field_mask(sentence1)
         sentence2_mask = util.get_text_field_mask(sentence2)
 
+        def truncate_sentence(s):
+            s["tokens"]["token_ids"] = s["tokens"]["token_ids"][:, :512]
+            s["tokens"]["token_ids"] = s["tokens"]["mask"][:, :512]
+            s["tokens"]["token_ids"] = s["tokens"]["type_ids"][:, :512]
+        truncate_sentence(sentence1)
+        truncate_sentence(sentence2)
+
         embedded_unit1_sentence = self.embedder(sentence1)
         embedded_unit2_sentence = self.embedder(sentence2)
 
