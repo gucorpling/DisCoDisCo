@@ -166,7 +166,10 @@ class CombinedSequenceModel(Model):
 
         num_relations = vocab.get_vocab_size("relation_labels")
         self.dropout = torch.nn.Dropout(dropout)
-        self.relation_decoder = torch.nn.Linear(self.bert_pooler.get_output_dim() * 2 + self.seq2vec.get_output_dim(), num_relations)
+
+        self.relation_decoder = torch.nn.Linear(
+            self.bert_pooler.get_output_dim() * 2 + self.seq2vec.get_output_dim() + 1, num_relations
+        )
 
         # these are stateful objects that keep track of accuracy across an epoch
         self.relation_accuracy = CategoricalAccuracy()
@@ -226,18 +229,18 @@ class CombinedSequenceModel(Model):
 
         # Get the features
         sequence_length = combined_sequence.shape[1]
-        direction = direction.unsqueeze(-1).expand(-1, sequence_length).unsqueeze(-1)
+        expanded_direction = direction.unsqueeze(-1).expand(-1, sequence_length).unsqueeze(-1)
         if self.feature_modules:
             features = self._get_combined_feature_tensor(kwargs).unsqueeze(1).expand(-1, sequence_length, -1)
-            combined_sequence = torch.cat((combined_sequence, direction, features), 2)
+            combined_sequence = torch.cat((combined_sequence, expanded_direction, features), 2)
         else:
-            combined_sequence = torch.cat((combined_sequence, direction), 2)
+            combined_sequence = torch.cat((combined_sequence, expanded_direction), 2)
 
         encoded_sequence = self.encoder(combined_sequence, combined_mask)
         encoded_sequence = self.dropout(encoded_sequence)
 
         sequence_embedding = self.seq2vec(encoded_sequence, combined_mask)
-        combined_pair_embedding = torch.cat((unit1_vec, unit2_vec, sequence_embedding), dim=1)
+        combined_pair_embedding = torch.cat((unit1_vec, unit2_vec, sequence_embedding, direction.unsqueeze(-1)), dim=1)
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined_pair_embedding)
         relation_logits = F.relu(relation_logits)

@@ -1,5 +1,4 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
-local max_length = 512;
 
 local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS"));  # uniquely determined by transformer_model
 
@@ -31,7 +30,6 @@ local features = {
             "type": "pretrained_transformer",
             "model_name": transformer_model_name
         },
-        "max_length": 512,
         "features": features
     },
   "train_data_path": std.extVar("TRAIN_DATA_PATH"),
@@ -43,8 +41,8 @@ local features = {
         "tokens": {
             "type": "pretrained_transformer",
             "model_name": transformer_model_name,
-            "train_parameters": false,
-            "last_layer_only": false
+            "train_parameters": true,
+            "last_layer_only": true
         }
       }
     },
@@ -55,25 +53,26 @@ local features = {
       "positional_encoding": "sinusoidal",
       "positional_embedding_size": 512,
       "num_attention_heads": 8,
-      "activation": "relu"
+      "activation": "gelu"
     },
     "features": features,
     "dropout": 0.5,
-    "combine_sequences_using_submask": false
+    "combine_sequences_using_submask": true
   },
-    "data_loader": {
-        "batch_size": 32,
-        "shuffle": true
-    },
+  "data_loader": {
+    "batch_size": 16,
+    "shuffle": true
+  },
   "trainer": {
     "num_epochs": 60,
-    "patience" : 15,
+    "patience" : 20,
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 5e-4,
+      "lr": 5e-6,
       //"parameter_groups": [
       //  [[".*transformer.*"], {"lr": 1e-5}]
       //]
-    }
+    },
+    "validation_metric": "+relation_accuracy"
   }
 }

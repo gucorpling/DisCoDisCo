@@ -101,6 +101,7 @@ echo $TEST_DATA_PATH
 allennlp predict \
         $MODEL_DIR \
         $TEST_DATA_PATH \
+        --silent \
         --use-dataset-reader \
         --output-file $OUTPUT_FILE_PATH
 
