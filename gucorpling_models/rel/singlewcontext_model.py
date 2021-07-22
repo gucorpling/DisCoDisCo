@@ -134,38 +134,36 @@ class Disrpt2021RelSingleWContext(Model):
         embedded_unit2_sentence = self.embedder(unit2_sentence)
         
         # with positions Jul 14
-        positions_unit1 = self.body_in_sent_position(unit1_body, unit1_sentence)
-        positions_unit2 = self.body_in_sent_position(unit2_body, unit2_sentence)
-        embedded_unit1_sentence = torch.cat((positions_unit1.unsqueeze(2), embedded_unit1_sentence), 2)
-        embedded_unit2_sentence = torch.cat((positions_unit2.unsqueeze(2), embedded_unit2_sentence), 2)
-        embedded_unit1_sentence = self.unit_linear(embedded_unit1_sentence)
-        embedded_unit2_sentence = self.unit_linear(embedded_unit2_sentence)
+        # positions_unit1 = self.body_in_sent_position(unit1_body, unit1_sentence)
+        # positions_unit2 = self.body_in_sent_position(unit2_body, unit2_sentence)
+        # embedded_unit1_sentence = torch.cat((positions_unit1.unsqueeze(2), embedded_unit1_sentence), 2)
+        # embedded_unit2_sentence = torch.cat((positions_unit2.unsqueeze(2), embedded_unit2_sentence), 2)
+        # embedded_unit1_sentence = self.unit_linear(embedded_unit1_sentence)
+        # embedded_unit2_sentence = self.unit_linear(embedded_unit2_sentence)
 
-        # embedded_combined_body = torch.cat((embedded_unit1_body, embedded_unit2_body), 1)
-        # combined_mask = torch.cat((util.get_text_field_mask(unit1_body), util.get_text_field_mask(unit2_body)), 1)
         curr_batch_size = embedded_unit1_sentence.shape[0]
         embedded_combined_body = torch.cat((
-            embedded_unit1_sentence,
-            # embedded_unit1_body,
-            self.sep1_body_tensor.expand(curr_batch_size, -1, -1),
-            embedded_unit2_sentence,
-            # embedded_unit2_body,
-            # self.sep2_body_tensor.expand(curr_batch_size, -1, -1),
             # embedded_unit1_sentence,
-            # self.sep3_body_tensor.expand(curr_batch_size, -1, -1),
-            # embedded_unit2_sentence
+            embedded_unit1_body,
+            self.sep1_body_tensor.expand(curr_batch_size, -1, -1),
+            # embedded_unit2_sentence,
+            embedded_unit2_body,
+            self.sep2_body_tensor.expand(curr_batch_size, -1, -1),
+            embedded_unit1_sentence,
+            self.sep3_body_tensor.expand(curr_batch_size, -1, -1),
+            embedded_unit2_sentence
         ), 1)
         
         combined_mask = torch.cat((
-            util.get_text_field_mask(unit1_sentence),
-            # util.get_text_field_mask(unit1_body),
-            self.sep1_mask_tensor.expand(curr_batch_size, -1),
-            util.get_text_field_mask(unit2_sentence),
-            # util.get_text_field_mask(unit2_body),
-            # self.sep2_mask_tensor.expand(curr_batch_size, -1),
             # util.get_text_field_mask(unit1_sentence),
-            # self.sep3_mask_tensor.expand(curr_batch_size, -1),
+            util.get_text_field_mask(unit1_body),
+            self.sep1_mask_tensor.expand(curr_batch_size, -1),
             # util.get_text_field_mask(unit2_sentence),
+            util.get_text_field_mask(unit2_body),
+            self.sep2_mask_tensor.expand(curr_batch_size, -1),
+            util.get_text_field_mask(unit1_sentence),
+            self.sep3_mask_tensor.expand(curr_batch_size, -1),
+            util.get_text_field_mask(unit2_sentence),
         ), 1)
 
         # Encode the text. Shape: (batch_size, encoder_output_dim)
