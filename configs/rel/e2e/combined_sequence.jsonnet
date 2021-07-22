@@ -68,7 +68,7 @@ local features = {
     "patience" : 20,
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 5e-6,
+      "lr": 1e-5,
       //"parameter_groups": [
       //  [[".*transformer.*"], {"lr": 1e-5}]
       //]
