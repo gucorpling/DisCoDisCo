@@ -60,7 +60,7 @@ local features = {
     "combine_sequences_using_submask": true
   },
   "data_loader": {
-    "batch_size": 16,
+    "batch_size": 4,
     "shuffle": true
   },
   "trainer": {
@@ -69,6 +69,8 @@ local features = {
     "optimizer": {
       "type": "huggingface_adamw",
       "lr": 1e-5,
+      "weight_decay": 0.05,
+      "betas": [0.9, 0.9]
       //"parameter_groups": [
       //  [[".*transformer.*"], {"lr": 1e-5}]
       //]

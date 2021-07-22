@@ -209,10 +209,12 @@ class CombinedSequenceModel(Model):
 
         def truncate_sentence(s):
             s["tokens"]["token_ids"] = s["tokens"]["token_ids"][:, :512]
-            s["tokens"]["token_ids"] = s["tokens"]["mask"][:, :512]
-            s["tokens"]["token_ids"] = s["tokens"]["type_ids"][:, :512]
+            s["tokens"]["mask"] = s["tokens"]["mask"][:, :512]
+            s["tokens"]["type_ids"] = s["tokens"]["type_ids"][:, :512]
         truncate_sentence(sentence1)
         truncate_sentence(sentence2)
+        unit1_span_mask = unit1_span_mask[:, :512]
+        unit2_span_mask = unit2_span_mask[:, :512]
 
         embedded_unit1_sentence = self.embedder(sentence1)
         embedded_unit2_sentence = self.embedder(sentence2)
