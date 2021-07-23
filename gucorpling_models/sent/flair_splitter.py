@@ -224,7 +224,7 @@ class FlairSentSplitter:
         elif "eng" in lang:
             embd = "bert-base-cased"
         elif "por" in lang:
-            embd = "neuralmind/bert-base-portuguese-cased"
+            embd = "bert-base-multilingual-cased"
         elif "spa" in lang:
             embd = "dccuchile/bert-base-spanish-wwm-cased"
         elif "fra" in lang:
