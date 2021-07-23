@@ -64,7 +64,7 @@ def get_diaparser_model(lang, model_dir):
         parser = Parser.load(model_dir + '/diaparser.pt_bosque.bert-base-portuguese-cased.pt')
     elif lang == 'eus':
         parser = Parser.load(model_dir + '/diaparser.eu_bdt.distilbert-multilingual-cased.pt')
-    elif lang =po= "fas":
+    elif lang == "fas":
         parser = Parser.load(model_dir + '/diaparser.fa_seraji.parsbert-base-cased.pt')
 
     return parser
@@ -105,17 +105,12 @@ if __name__ == "__main__":
 
     p = ArgumentParser()
     p.add_argument("-f", "--file", help="dir containing subdirectories for each languages, including sent_test.pred "
-                                        "file",
-                   default='/Users/shabnam/Desktop/GU/Projects/DISRPT/sharedtask2019/correctDATA/data/2019-output'
-                           '-testing/')
-    p.add_argument("-i", "--inf", help="dir containing doc info, output of get_docs_inof.py",
-                   default='/Users/shabnam/Desktop/GU/Projects/DISRPT/sharedtask2019/correctDATA/data/2019-output'
-                           '-testing/')
+                                        "file")
+    p.add_argument("-i", "--inf", help="dir containing doc info, output of get_docs_inof.py")
     p.add_argument("-d", "--model_dir", help="directory containing diaparser.eu_bdt.distilbert-multilingual-cased.pt "
-                                             "and diaparser.pt_bosque.bert-base-portuguese-cased.pt for diaparser.",
-                   default="/Users/shabnam/Desktop/GU/Projects/DISRPT/pretrained/")
+                                             "and diaparser.pt_bosque.bert-base-portuguese-cased.pt for diaparser.")
     p.add_argument("-m", "--mode", help="train/test/dev.",
-                   default="dev")
+                   default="test")
     opts = p.parse_args()
 
     folders = glob(opts.file + '/' + '*/')
