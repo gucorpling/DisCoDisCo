@@ -64,6 +64,8 @@ def get_diaparser_model(lang, model_dir):
         parser = Parser.load(model_dir + '/diaparser.pt_bosque.bert-base-portuguese-cased.pt')
     elif lang == 'eus':
         parser = Parser.load(model_dir + '/diaparser.eu_bdt.distilbert-multilingual-cased.pt')
+    elif lang =po= "fas":
+        parser = Parser.load(model_dir + '/diaparser.fa_seraji.parsbert-base-cased.pt')
 
     return parser
 
