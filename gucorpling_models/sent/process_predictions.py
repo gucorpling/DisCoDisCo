@@ -26,16 +26,15 @@ if __name__ == "__main__":
                 begin = False
                 sents.append(line)
         new_sents = []
+        count = 0
         for j in range(len(sents)):
-            if sents[j] == "!" or sents[j] == "?":
-                if sents[j + 1] != "</s>":
-                    new_sents.append(sents[j])
-                    new_sents.append("</s>")
-                    new_sents.append("<s>")
-                else:
-                    new_sents.append(sents[j])
-            else:
-                new_sents.append(sents[j])
+            if count == 256 and new_sents[j] != "</s>":
+                new_sents.append("</s>")
+                new_sents.append("<s>")
+                count = 0
+            new_sents.append(sents[j])
+            count += 1
+
         with open(data_dir + '/sent_' + opts.mode + '.predV2', 'w') as out:
             for s in new_sents:
-                out.write(s+'\n')
+                out.write(s + '\n')
