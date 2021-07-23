@@ -523,4 +523,8 @@ def read_conll_conn(
         df = DepFeatures()
         output = df.extract_depfeatures(output)
 
+    for t in output:
+        if "sent_doc_percentile" not in t:
+            t["sent_doc_percentile"] = 0.5
+
     return output, vocab, toks, firsts, lasts
