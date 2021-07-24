@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     folders = glob(opts.file + '/' + '*/')
     for data_dir in folders:
+        print(data_dir)
         sents = []
         begin = True
         with open(data_dir + '/sent_' + opts.mode + '.pred', 'r') as inp:
@@ -28,7 +29,10 @@ if __name__ == "__main__":
         new_sents = []
         count = 0
         for j in range(len(sents)):
-            if count == 256 and new_sents[j] != "</s>":
+            if sents[j]=="<s>":
+                count=0
+            if count == 256 and sents[j] != "</s>":
+                print(">256")
                 new_sents.append("</s>")
                 new_sents.append("<s>")
                 count = 0

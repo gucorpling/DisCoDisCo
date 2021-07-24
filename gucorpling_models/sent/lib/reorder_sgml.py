@@ -61,9 +61,11 @@ def reorder(tt_sgml, priorities=PRIORITIES):
     spans = []
     toknum = 1
     for line in lines:
+        print(line)
         if line.startswith("</") and line.endswith(">"):  # Close element
             elem = re.search(r"^</([^\s>]*)", line).group(1)
             if elem not in open_elems:
+                import pdb; pdb.set_trace();
                 raise IOError("! saw a closed element: " + line + " but no corresponding element is open!\n")
             span = Span(
                 start=open_elems[elem][-1][0],

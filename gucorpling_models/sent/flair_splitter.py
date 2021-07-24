@@ -329,6 +329,7 @@ class FlairSentSplitter:
 
             labels.append(label)
 
+        import pdb; pdb.set_trace();
         if outmode == "binary":
             return labels
 
