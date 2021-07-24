@@ -5,7 +5,7 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 CORPUS="$1"
-CORPUS_DIR="sharedtask2021/data/${1}"
+CORPUS_DIR="data/2021/${1}"
 MODEL_DIR=${2:-models}/${CORPUS}_rel_bert_baseline
 if [[ ! -d $CORPUS_DIR ]]; then
   echo "Corpus \"$CORPUS_DIR\" not found"
@@ -74,11 +74,10 @@ allennlp train \
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo "# Testing on ${CORPUS}"
-echo "# (NOTE: TESTING ON DEV, CHANGE TO TEST ONCE IT IS RELEASED)"
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
-JSON_PRED_PATH="${MODEL_DIR}/output_dev.jsonl"
-RELS_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
+JSON_PRED_PATH="${MODEL_DIR}/output_test.jsonl"
+RELS_GOLD_PATH="${CORPUS_DIR}/${CORPUS}_test.rels"
 allennlp predict \
   "${MODEL_DIR}/model.tar.gz" \
   "$RELS_GOLD_PATH" \

@@ -65,15 +65,15 @@ local features = {
   },
   "trainer": {
     "num_epochs": 60,
-    "patience" : 20,
+    "patience" : 15,
     "optimizer": {
       "type": "huggingface_adamw",
-      "lr": 1e-5,
+      "lr": 2e-5,
       "weight_decay": 0.05,
-      "betas": [0.9, 0.9]
-      //"parameter_groups": [
-      //  [[".*transformer.*"], {"lr": 1e-5}]
-      //]
+      "betas": [0.9, 0.9],
+      "parameter_groups": [
+        [[".*embedder.*transformer.*"], {"lr": 1e-5}]
+      ]
     },
     "validation_metric": "+relation_accuracy"
   }
