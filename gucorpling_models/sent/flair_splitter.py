@@ -211,7 +211,7 @@ class FlairSentSplitter:
         tag_type = "ner"
         tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
         print(tag_dictionary)
-        embd = "distilbert-base-multilingual-cased"
+        embd = "bert-base-multilingual-cased"
         lang = training_dir.split('/')[-2]
         if "deu" in lang:
             embd = "bert-base-german-cased"
@@ -233,8 +233,6 @@ class FlairSentSplitter:
             embd="GroNLP/bert-base-dutch-cased"
         elif "rus" in lang:
             embd="blinoff/roberta-base-russian-v0"
-        elif "fas" in lang:
-            embd = "HooshvareLab/bert-base-parsbert-uncased"
 
 
         # initialize embeddings
