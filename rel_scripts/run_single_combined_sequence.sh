@@ -54,8 +54,36 @@ elif [[ "$CORPUS" == "fas"* ]]; then
 else
 	export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
 fi
-
 # export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
+
+# use fastText embeddings
+if [[ "$CORPUS" == "eng"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.en.300.vec"
+elif [[ "$CORPUS" == "deu"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.de.300.vec"
+elif [[ "$CORPUS" == "eus"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.eu.300.vec"
+elif [[ "$CORPUS" == "fas"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fa.300.vec"
+elif [[ "$CORPUS" == "fra"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fr.300.vec"
+elif [[ "$CORPUS" == "nld"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
+elif [[ "$CORPUS" == "por"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.pt.300.vec"
+elif [[ "$CORPUS" == "rus"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.ru.300.vec"
+elif [[ "$CORPUS" == "spa"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.es.300.vec"
+elif [[ "$CORPUS" == "tur"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
+elif [[ "$CORPUS" == "zho"* ]]; then
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.zh.300.vec"
+else
+  echo "Couldn't find a fasttext embedding for \"$CORPUS\"" >&2
+  exit 1
+fi
+
 
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
@@ -68,27 +96,6 @@ echo $TRAIN_DATA_PATH
 allennlp train \
 	configs/rel/e2e/combined_sequence.jsonnet \
 	-s "$MODEL_DIR" \
-
-# echo ""
-# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-# echo "# Predicting on ${CORPUS}"
-# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-# echo ""
-# export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
-# echo $VALIDATION_DATA_PATH
-# allennlp predict \
-#         $MODEL_DIR \
-#         $VALIDATION_DATA_PATH \
-#         --use-dataset-reader \
-#         --output-file tmp/dev_rel_e2e_renovated/predictions_e2e_rel_${CORPUS}.json
-
-# echo ""
-# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-# echo "# Evaluating on ${CORPUS}"
-# echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-# echo ""
-# python utils/e2e_metrics.py tmp/dev_rel_e2e_renovated/predictions_e2e_rel_${CORPUS}.json
-
 
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
