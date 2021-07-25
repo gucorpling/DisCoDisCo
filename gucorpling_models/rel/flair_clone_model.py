@@ -51,16 +51,16 @@ class FlairCloneModel(Model):
             feature_dims = 0
         num_relations = vocab.get_vocab_size("relation_labels")
 
-        #self.relation_decoder = torch.nn.Linear(
-        #    self.encoder.get_output_dim() + feature_dims + 1, num_relations
-        #)
-        self.relation_decoder = FeedForward(
-            input_dim=self.encoder.get_output_dim() + feature_dims + 1,
-            num_layers=3,
-            hidden_dims=[512, 256, num_relations],
-            activations=[Activation.by_name('tanh')(), Activation.by_name('tanh')(), Activation.by_name('linear')()],
-            dropout=0.1
+        self.relation_decoder = torch.nn.Linear(
+            self.encoder.get_output_dim() + feature_dims + 1, num_relations
         )
+        #self.relation_decoder = FeedForward(
+        #    input_dim=self.encoder.get_output_dim() + feature_dims + 1,
+        #    num_layers=3,
+        #    hidden_dims=[512, 256, num_relations],
+        #    activations=[Activation.by_name('tanh')(), Activation.by_name('tanh')(), Activation.by_name('linear')()],
+        #    dropout=0.1
+        #)
 
         self.relation_accuracy = CategoricalAccuracy()
         self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")

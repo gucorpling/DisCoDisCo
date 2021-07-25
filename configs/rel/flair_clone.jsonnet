@@ -59,16 +59,16 @@ local features = {
     "shuffle": true
   },
   "trainer": {
-    "num_epochs": 60,
-    "patience" : 15,
+    "num_epochs": 100,
+    "patience" : 30,
     "optimizer": {
       "type": "huggingface_adamw",
       "lr": 2e-5,
-      "weight_decay": 0.04,
-      "betas": [0.9, 0.99],
-      "parameter_groups": [
-        [[".*embedder.*transformer.*"], {"lr": 1e-5}]
-      ]
+      #"weight_decay": 0.04,
+      #"betas": [0.9, 0.99],
+      #"parameter_groups": [
+      #  [[".*embedder.*transformer.*"], {"lr": 1e-5}]
+      #]
     },
     "validation_metric": "+relation_accuracy"
   }
