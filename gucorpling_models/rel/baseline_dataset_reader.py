@@ -21,14 +21,12 @@ class Disrpt2021RelReader(DatasetReader):
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
-        max_tokens: int = None,
         features: Dict[str, Feature] = None,
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.tokenizer = tokenizer or WhitespaceTokenizer()
-        self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
-        self.max_tokens = max_tokens  # useful for BERT
+        self.tokenizer = tokenizer
+        self.token_indexers = token_indexers
         self.features = features
 
     def text_to_instance(  # type: ignore
@@ -45,17 +43,16 @@ class Disrpt2021RelReader(DatasetReader):
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)
         unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
         unit2_sent_tokens = self.tokenizer.tokenize(unit2_sent)
-        if self.max_tokens:
-            unit1_txt_tokens = unit1_txt_tokens[: self.max_tokens]
-            unit1_sent_tokens = unit1_sent_tokens[: self.max_tokens]
-            unit2_txt_tokens = unit2_txt_tokens[: self.max_tokens]
-            unit2_sent_tokens = unit2_sent_tokens[: self.max_tokens]
+        combined_txt_tokens = unit1_txt_tokens + unit2_txt_tokens[1:]
+        combined_sent_tokens = unit1_sent_tokens + unit2_sent_tokens[1:]
 
         fields: Dict[str, Field] = {
             "unit1_body": TextField(unit1_txt_tokens, self.token_indexers),
             "unit1_sentence": TextField(unit1_sent_tokens, self.token_indexers),
             "unit2_body": TextField(unit2_txt_tokens, self.token_indexers),
             "unit2_sentence": TextField(unit2_sent_tokens, self.token_indexers),
+            "combined_body": TextField(combined_txt_tokens, self.token_indexers),
+            "combined_sentence": TextField(combined_sent_tokens, self.token_indexers),
             "direction": LabelField(dir, label_namespace="direction_labels"),
         }
 
