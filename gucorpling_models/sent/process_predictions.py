@@ -5,9 +5,7 @@ if __name__ == "__main__":
 
     p = ArgumentParser()
     p.add_argument("-f", "--file", help="dir containing subdirectories for each languages, including sent_test.pred "
-                                        "file",
-                   default='/Users/shabnam/Desktop/GU/Projects/DISRPT/sharedtask2019/correctDATA/data/2019-output'
-                           '-testing/')
+                                        "file")
     p.add_argument("-m", "--mode", help="train/test/dev",
                    default="dev")
     opts = p.parse_args()

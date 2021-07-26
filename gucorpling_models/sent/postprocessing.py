@@ -115,8 +115,6 @@ if __name__ == "__main__":
 
     folders = glob(opts.file + '/' + '*/')
     for data_dir in folders:
-        if "rus.rst.rrt" in data_dir:
-            continue
         with open(data_dir + '/sent_' + opts.mode + '.predV2', 'r') as inp:
             lang = data_dir.split('/')[-2].split('.')[0]
             print('\n\n******************************************************\n\n')
@@ -134,6 +132,7 @@ if __name__ == "__main__":
                         print('issue with first sentence in predictions')
                         sentences.append([])
                     sentences[-1].append(line.rstrip())
+
             tags = get_tags(sentences, lang)
             data = dependency_parser(sentences, lang, opts.model_dir)
             name = data_dir.split('/')[-2]
