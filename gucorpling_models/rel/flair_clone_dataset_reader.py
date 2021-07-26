@@ -81,10 +81,6 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         print(combined_sent_tokens)
 
         fields: Dict[str, Field] = {
-            "unit1_body": TextField(unit1_txt_tokens, self.token_indexers),
-            "unit1_sentence": TextField(unit1_sent_tokens, self.token_indexers),
-            "unit2_body": TextField(unit2_txt_tokens, self.token_indexers),
-            "unit2_sentence": TextField(unit2_sent_tokens, self.token_indexers),
             "combined_body": TextField(combined_txt_tokens, self.token_indexers),
             "combined_sentence": TextField(combined_sent_tokens, self.token_indexers),
             "direction": LabelField(dir, label_namespace="direction_labels"),
@@ -104,10 +100,7 @@ class Disrpt2021FlairCloneReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterable[Instance]:
         assert file_path.endswith(".rels")
-
         rels_file_path = file_path
-        # conllu_file_path = rels_file_path.replace(".rels", ".conllu")
-        # tok_file_path = rels_file_path.replace(".rels", ".tok")
         corpus = file_path.split(os.sep)[-1].split('_')[0]
         features = process_relfile(
             file_path,
@@ -118,51 +111,6 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         with open(rels_file_path, "r") as f:
             logger.debug("reading " + rels_file_path)
             reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
-            # Keys:
-            # METADATA
-            # doc - name of the document
-            # LABELS
-            # label - label of the relation between the two units in the CODI-DISRPT 2021 constrained vocabulary
-            # orig_label - label of the dependency between the two units as it is in the original treebank
-            # dir - 1>2 if unit 1 dominates unit 2, 1<2 otherwise
-            # DATA
-            # unit1_txt, unit2_txt - DISCOURSE UNIT-level, whitespace-tokenized tokens (for use with conllu)
-            # unit1_toks, unit2_toks - DISCOURSE UNIT-level, document-wide token ID range
-            # unit1_sent, unit2_sent - SENTENCE-level, whitespace-tokenized tokens (for use with conllu)
-            # s1_toks, s2_toks - SENTENCE-level, document-wide token ID range
-
-            # Some gotchas:
-            # - A special symbol <*> is used to indicate a break in discontinuous units
-            # - For discontinuous units, tok ranges will be separated by a comma, like 1-3,5-8
-
-            # Full example:
-            # {'doc': 'GUM_academic_exposure',
-            #  ## labels
-            #  'label': 'preparation',
-            #  'orig_label': 'preparation',
-            #  ## data
-            #  'dir': '1>2',
-            #
-            #  'unit1_txt': 'Introduction',
-            #  'unit1_toks': '1',
-            #  'unit1_sent': 'Introduction',
-            #  's1_toks': '1',
-            #
-            #  'unit2_txt': 'In the present study , we examine the outcomes of such a period '
-            #               'of no exposure on the neurocognition of L2 grammar :',
-            #  'unit2_toks': '186-208',
-            #  'unit2_sent': 'In the present study , we examine the outcomes of such a '
-            #                'period of no exposure on the neurocognition of L2 grammar : '
-            #                'that is , whether a substantial period of no exposure leads to '
-            #                'decreased proficiency and / or less native-like neural '
-            #                'processes ( “ use it or lose it ” [ 20 ] ) , no such changes , '
-            #                'or perhaps whether even higher proficiency and / or more '
-            #                'native-like processing may be observed .',
-            #  's2_toks': '186-262'}
-
-            #    2019/deu.rst.pcc/deu.rst.pcc_dev.rels
-            # => deu.rst.pcc_dev.rels
-            # => deu.rst.pcc
 
             for i, row in enumerate(reader):
                 yield self.text_to_instance(
