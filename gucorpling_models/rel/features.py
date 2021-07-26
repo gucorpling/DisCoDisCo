@@ -5,6 +5,8 @@ from collections import defaultdict
 from argparse import ArgumentParser
 from glob import glob
 
+from scipy.stats import zscore
+
 
 class Token:
     def __init__(self, abs_id, form, xpos, abs_head, deprel, speaker):
@@ -222,6 +224,19 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
                 del feats["doc"]
 
             output.append(feats)
+
+    for featname in [
+        "doclen",
+        "u1_position",
+        "u2_position",
+        "distance",
+        "nuc_children",
+        "lex_overlap_length"
+    ]:
+        xs = [x[featname] for x in output]
+        new_xs = zscore(xs)
+        for o, x in zip(output, new_xs):
+            o[featname] = x.item()
 
     return output
 

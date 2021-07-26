@@ -15,11 +15,12 @@ local features = {
   "u1_position": {"source_key": "u1_position"},
   "u2_position": {"source_key": "u2_position"},
   "distance": {"source_key": "distance"},
+  "lex_overlap_length": {"source_key": "lex_overlap_length"}
 };
 
 {
   "dataset_reader" : {
-    "type": "disrpt_2021_rel",
+    "type": "disrpt_2021_rel_flair_clone",
     "token_indexers": {
       "tokens": {
         "type": "pretrained_transformer",
@@ -42,6 +43,7 @@ local features = {
         "tokens": {
           "type": "pretrained_transformer",
           "model_name": transformer_model_name,
+          "max_length": 512,
           "train_parameters": true,
           "last_layer_only": true
         }
@@ -51,25 +53,42 @@ local features = {
         "type": "bert_pooler",
         "pretrained_model": transformer_model_name
     },
+    "dropout": 0.0,
     //"features": features,
-    "dropout": 0.4
   },
   "data_loader": {
-    "batch_size": 8,
+    "batch_size": 4,
     "shuffle": true
   },
   "trainer": {
     "num_epochs": 100,
-    "patience" : 30,
+    "patience": 12,
     "optimizer": {
-      "type": "huggingface_adamw",
+      "type": "adamw",
       "lr": 2e-5,
-      #"weight_decay": 0.04,
+      #"weight_decay": 0.05,
       #"betas": [0.9, 0.99],
       #"parameter_groups": [
-      #  [[".*embedder.*transformer.*"], {"lr": 1e-5}]
-      #]
+      #  [[".*embedder.*transformer.*"], {"lr": 2e-5}]
+      #],
     },
-    "validation_metric": "+relation_accuracy"
+    #"learning_rate_scheduler": {
+    #  "type": "slanted_triangular",
+    #  "num_epochs": 50,
+    #  "cut_frac": 0.1,
+    #},
+    "learning_rate_scheduler": {
+      "type": "reduce_on_plateau",
+      "factor": 0.6,
+      "mode": "max",
+      "patience": 2,
+      "verbose": true,
+      "min_lr": 5e-7
+    },
+    //"learning_rate_scheduler": {
+    //  "type": "cosine",
+    //  "t_initial": 5,
+    //},
+    //"validation_metric": "+relation_accuracy"
   }
 }

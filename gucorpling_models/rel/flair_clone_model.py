@@ -1,18 +1,14 @@
 import logging
-import math
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 import torch
 import torch.nn.functional as F
-from allennlp.data.token_indexers import PretrainedTransformerIndexer
-from allennlp.modules.seq2seq_encoders import PytorchTransformer
-from allennlp.modules.seq2vec_encoders import LstmSeq2VecEncoder, BertPooler
-from overrides import overrides
 
-from allennlp.data import TextFieldTensors, Vocabulary, Token, TokenIndexer
+from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import TextFieldEmbedder, FeedForward, Seq2VecEncoder
 from allennlp.nn import util, InitializerApplicator, Activation
+from allennlp.nn.util import sequence_cross_entropy_with_logits
 from allennlp.training.metrics import CategoricalAccuracy
 from gucorpling_models.features import Feature, get_feature_modules
 
@@ -49,18 +45,18 @@ class FlairCloneModel(Model):
         else:
             self.feature_modules = None
             feature_dims = 0
-        num_relations = vocab.get_vocab_size("relation_labels")
+        # direction
+        feature_dims += 1
+        self.num_relations = vocab.get_vocab_size("relation_labels")
 
-        self.relation_decoder = torch.nn.Linear(
-            self.encoder.get_output_dim() + feature_dims + 1, num_relations
-        )
-        #self.relation_decoder = FeedForward(
-        #    input_dim=self.encoder.get_output_dim() + feature_dims + 1,
-        #    num_layers=3,
-        #    hidden_dims=[512, 256, num_relations],
-        #    activations=[Activation.by_name('tanh')(), Activation.by_name('tanh')(), Activation.by_name('linear')()],
-        #    dropout=0.1
-        #)
+        self.relation_decoder = torch.nn.Linear(self.encoder.get_output_dim() + feature_dims, self.num_relations)
+        # self.relation_decoder = FeedForward(
+        #     input_dim=self.encoder.get_output_dim() + feature_dims,
+        #     num_layers=3,
+        #     hidden_dims=[512, 256, num_relations],
+        #     activations=[Activation.by_name('relu')(), Activation.by_name('relu')(), Activation.by_name('linear')()],
+        #     dropout=0.1
+        # )
 
         self.relation_accuracy = CategoricalAccuracy()
         self.relation_labels = self.vocab.get_index_to_token_vocabulary("relation_labels")
@@ -113,6 +109,13 @@ class FlairCloneModel(Model):
         if relation is not None:
             self.relation_accuracy(relation_logits, relation)
             output["gold_relation"] = relation
+
+            #output["loss"] = sequence_cross_entropy_with_logits(
+            #    relation_logits.unsqueeze(1),
+            #    relation.unsqueeze(1),
+            #    torch.ones(list(relation.shape[0:2])).bool().to(relation_logits.device),
+            #    gamma=5
+            #)
             output["loss"] = F.cross_entropy(relation_logits, relation)
         return output
 
