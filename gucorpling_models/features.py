@@ -25,7 +25,7 @@ class NaturalLog(TransformationFunction):
 
 
 @TransformationFunction.register("abs_natural_log")
-class NaturalLog(TransformationFunction):
+class AbsNaturalLog(TransformationFunction):
     def __call__(self, xs, tokenwise):
         if tokenwise:
             return [math.log(abs(x)) if x != 0 else x for x in xs]
