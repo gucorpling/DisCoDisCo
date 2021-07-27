@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ $# -eq 0 ]; then
-	echo "Supply the name of a corpus"
-	exit 1
+  echo "Supply the name of a corpus"
+  exit 1
 fi
 if [[ ! -d "data/" ]]; then
         echo "Data not found--please download it from https://drive.google.com/file/d/1wDmv6TzZqUwnw1Csn4Yz66uF1UYV-K-L/view?usp=sharing"
@@ -13,48 +13,55 @@ CORPUS_DIR="data/2021/${1}"
 MODEL_DIR=${2:-models}/${CORPUS}_flair_clone
 
 if [[ ! -d $CORPUS_DIR ]]; then
-	echo "Corpus \"$CORPUS_DIR\" not found"
-	exit 1
+  echo "Corpus \"$CORPUS_DIR\" not found"
+  exit 1
 fi
 
 if [[ -d $MODEL_DIR ]]; then
    # echo "\"$MODEL_DIR\" already exists. Ignore it"
    # exit 1
-	echo "\"$MODEL_DIR\" already exists. Removing it now..."
-	rm -rf "$MODEL_DIR"
+  echo "\"$MODEL_DIR\" already exists. Removing it now..."
+  rm -rf "$MODEL_DIR"
 fi
 
 # use language-specific berts if we can
 export EMBEDDING_DIMS=768
-if [[ "$CORPUS" == "eng.sdrt.stac"* ]]; then
-	export EMBEDDING_MODEL_NAME="bert-base-uncased"
-elif [[ "$CORPUS" == "eng"* ]]; then
-	export EMBEDDING_MODEL_NAME="SpanBERT/spanbert-base-cased"
-#    export EMBEDDING_MODEL_NAME="bert-base-cased"
+if [[ "$CORPUS" == "eng"* ]]; then
+  export EMBEDDING_DIMS=1024
+  #export EMBEDDING_MODEL_NAME="roberta-large"
+  export EMBEDDING_MODEL_NAME="google/electra-large-discriminator"
+elif [[ "$CORPUS" == "fas"* ]]; then
+  export EMBEDDING_MODEL_NAME="HooshvareLab/bert-fa-base-uncased"
 elif [[ "$CORPUS" == "deu"* ]]; then
-	export EMBEDDING_MODEL_NAME="bert-base-german-cased"
+  #export EMBEDDING_DIMS=1024
+  #export EMBEDDING_MODEL_NAME="deepset/gelectra-large"
+  export EMBEDDING_DIMS=1024
+  export EMBEDDING_MODEL_NAME="deepset/gbert-large"
 elif [[ "$CORPUS" == "fra"* ]]; then
-	export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
-elif [[ "$CORPUS" == "nld"* ]]; then
-	export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
-	export EMBEDDING_MODEL_NAME="bert-base-chinese"
+  #export EMBEDDING_DIMS=1024
+  #export EMBEDDING_MODEL_NAME="hfl/chinese-electra-180g-large-discriminator"
+  export EMBEDDING_MODEL_NAME="bert-base-chinese"
+elif [[ "$CORPUS" == "nld"* ]]; then
+  #export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  export EMBEDDING_MODEL_NAME="pdelobelle/robbert-v2-dutch-base"
 elif [[ "$CORPUS" == "eus"* ]]; then
-	export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
+  export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
 elif [[ "$CORPUS" == "spa"* ]]; then
-	export EMBEDDING_MODEL_NAME="dccuchile/bert-base-spanish-wwm-cased"
+  #export EMBEDDING_MODEL_NAME="mrm8488/electricidad-base-discriminator"
+  export EMBEDDING_MODEL_NAME="dccuchile/bert-base-spanish-wwm-cased"
 elif [[ "$CORPUS" == "por"* ]]; then
   export EMBEDDING_MODEL_NAME="neuralmind/bert-base-portuguese-cased"
 elif [[ "$CORPUS" == "tur"* ]]; then
-	export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
+  #export EMBEDDING_MODEL_NAME="dbmdz/electra-base-turkish-cased-discriminator"
+  export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 elif [[ "$CORPUS" == "rus"* ]]; then
-	export EMBEDDING_MODEL_NAME="blinoff/roberta-base-russian-v0"
-elif [[ "$CORPUS" == "fas"* ]]; then
-	export EMBEDDING_MODEL_NAME="HooshvareLab/bert-fa-zwnj-base"
+  export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
 else
-	export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
+  export EMBEDDING_DIMS=1024
+  export EMBEDDING_MODEL_NAME="xlm-roberta-large"
 fi
-# export EMBEDDING_MODEL_NAME="bert-base-multilingual-cased"
 
 # use fastText embeddings
 if [[ "$CORPUS" == "eng"* ]]; then
@@ -94,8 +101,8 @@ export TRAIN_DATA_PATH="${CORPUS_DIR}/${CORPUS}_train.rels"
 export VALIDATION_DATA_PATH="${CORPUS_DIR}/${CORPUS}_dev.rels"
 echo $TRAIN_DATA_PATH
 allennlp train \
-	configs/rel/flair_clone.jsonnet \
-	-s "$MODEL_DIR" \
+  configs/rel/flair_clone.jsonnet \
+  -s "$MODEL_DIR" \
 
 echo ""
 echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
