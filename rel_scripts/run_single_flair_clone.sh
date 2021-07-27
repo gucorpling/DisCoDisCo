@@ -53,8 +53,8 @@ elif [[ "$CORPUS" == "por"* ]]; then
 elif [[ "$CORPUS" == "tur"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 elif [[ "$CORPUS" == "rus"* ]]; then
-  #export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased-sentence"
-  export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
+  export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased-sentence"
+  #export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
 else
   export EMBEDDING_DIMS=1024
   export EMBEDDING_MODEL_NAME="xlm-roberta-large"
