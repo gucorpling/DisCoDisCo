@@ -83,7 +83,6 @@ class Disrpt2021FlairCloneReader(DatasetReader):
             + right_tokens
             + unit2_sent_tokens[-1:]
         )
-        print(combined_sent_tokens)
 
         fields: Dict[str, Field] = {
             "combined_body": TextField(combined_txt_tokens, self.token_indexers),
