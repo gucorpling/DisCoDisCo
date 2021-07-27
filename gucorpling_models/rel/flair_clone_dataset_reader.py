@@ -43,11 +43,17 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)
         unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
         unit2_sent_tokens = self.tokenizer.tokenize(unit2_sent)
-        assert unit2_txt_tokens[0].text == "[CLS]", unit2_txt_tokens
+        cls_token = unit1_txt_tokens[0]
+        sep_token = unit1_txt_tokens[-1]
+        if cls_token.text not in ["[CLS]", '<s>']:
+            raise Exception(f"Unrecognized cls token: {cls_token.text}")
+        if sep_token.text not in ["[SEP]", '</s>']:
+            raise Exception(f"Unrecognized sep token: {sep_token.text}")
+
         if dir == "1<2":
             left_tokens = []
             right_tokens = [Token("{")]
-            dir_tokens = self.tokenizer.tokenize("[SEP] <")[1:-1]
+            dir_tokens = self.tokenizer.tokenize(sep_token.text + " <")[1:-1]
             #print(dir_tokens)
             #dir_tokens = [Token(t) for t in ['[', 'SE', '##P', ']', '<', '<']]
             #dir_tokens = [Token("<<"), Token("[SEP]"), Token("<<")]
@@ -55,7 +61,7 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         else:
             left_tokens = [Token("}")]
             right_tokens = []
-            dir_tokens = self.tokenizer.tokenize("> [SEP]")[1:-1]
+            dir_tokens = self.tokenizer.tokenize("> " + sep_token.text)[1:-1]
             #dir_tokens = [Token(t) for t in ['>', '>', '[', 'SE', '##P', ']']]
             #dir_tokens = [Token(">>"), Token("[SEP]"), Token(">>")]
             #dir_tokens = [Token(">>["), Token("SEP"), Token("]")]
