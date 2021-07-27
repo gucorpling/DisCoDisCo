@@ -115,7 +115,7 @@ def get_case(text,lang):
         return "other"
 
 
-def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=False):
+def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=False, do_zscore=False):
     lang = corpus.split(".")[0]
     try:
         stop_list = stop[lang]
@@ -127,8 +127,9 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
         conllu = io.open(conllu,encoding="utf8").read().strip()
 
     unit_freqs = defaultdict(int)
+    unit_spans = defaultdict(set)
     lines = infile.split("\n")
-    # Pass 1: Collect number of instances for each head EDU
+    # Pass 1: Collect number of instances for each head EDU and sequential ID
     for i, line in enumerate(lines):
         if "\t" in line and i > 0:  # Skip header
             cols = {}
@@ -139,6 +140,20 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
             else:
                 head_unit = cols["unit1_toks"]
             unit_freqs[(cols["doc"], head_unit)] += 1
+            unit_spans[cols["doc"]].add(cols["unit1_toks"])
+            unit_spans[cols["doc"]].add(cols["unit2_toks"])
+
+    units2start = defaultdict(dict)
+    for doc in unit_spans:
+        for span in unit_spans[doc]:
+            start = re.split(r'[-,]',span)[0]
+            units2start[doc][span] = int(start)
+    unit_order = defaultdict(dict)
+    for doc in units2start:
+        counter = 0
+        for u in sorted(units2start[doc],key=lambda x: units2start[doc][x]):
+            unit_order[doc][u] = counter
+            counter += 1
 
     # Pass 2: Get conllu data
     tokmap = defaultdict(dict)
@@ -175,9 +190,12 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
                 feats[headers[j]] = col
             if feats["dir"] == "1>2":
                 head_unit = feats["unit2_toks"]
+                child_unit = feats["unit1_toks"]
             else:
                 head_unit = feats["unit1_toks"]
+                child_unit = feats["unit2_toks"]
             feats["nuc_children"] = unit_freqs[(feats["doc"],head_unit)]
+            feats["sat_children"] = unit_freqs[(feats["doc"],child_unit)]
             feats["genre"] = get_genre(corpus,feats["doc"])
             feats["u1_discontinuous"] = "<*>" in feats["unit1_txt"]
             feats["u2_discontinuous"] = "<*>" in feats["unit2_txt"]
@@ -202,7 +220,9 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
             feats["doclen"] = max(tokmap[feats["doc"]])
             feats["u1_position"] = 0.0 if u1_start == "1" else int(u1_start) / feats["doclen"]  # Position as fraction of doc length
             feats["u2_position"] = 0.0 if u2_start == "1" else int(u2_start) / feats["doclen"]  # Position as fraction of doc length
-            feats["distance"] = feats["u2_position"] - feats["u1_position"]  # Distance in tokens as fraction of doc length
+            feats["percent_distance"] = feats["u2_position"] - feats["u1_position"]  # Distance in tokens as fraction of doc length
+            # Distance in ordered spans (EDUs, or for PDTB how many other units are attested in between):
+            feats["distance"] = unit_order[feats["doc"]][feats["unit2_toks"]] - unit_order[feats["doc"]][feats["unit1_toks"]]
             unit1_words = feats["unit1_txt"].split(" ")
             unit2_words = feats["unit2_txt"].split(" ")
             overlap_words = [w for w in unit1_words if w in unit2_words and w not in stop_list]
@@ -225,18 +245,20 @@ def process_relfile(infile, conllu, corpus, as_string=False, keep_all_columns=Fa
 
             output.append(feats)
 
-    for featname in [
-        "doclen",
-        "u1_position",
-        "u2_position",
-        "distance",
-        "nuc_children",
-        "lex_overlap_length"
-    ]:
-        xs = [x[featname] for x in output]
-        new_xs = zscore(xs)
-        for o, x in zip(output, new_xs):
-            o[featname] = x.item()
+    if do_zscore:
+        for featname in [
+            "doclen",
+            "u1_position",
+            "u2_position",
+            "distance",
+            "nuc_children",
+            "sat_children",
+            "lex_overlap_length"
+        ]:
+            xs = [x[featname] for x in output]
+            new_xs = zscore(xs)
+            for o, x in zip(output, new_xs):
+                o[featname] = x.item()
 
     return output
 
@@ -275,5 +297,7 @@ if __name__ == "__main__":
 
         output = ["\t".join(ordered)] + output
 
+        #print ("\n".join(output[:100]))
+        #quit()
         with io.open(os.path.basename(file_).replace(".rels","_enriched.rels"),'w',encoding="utf8",newline="\n") as f:
             f.write("\n".join(output)+"\n")
