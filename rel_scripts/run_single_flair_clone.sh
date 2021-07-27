@@ -28,7 +28,7 @@ fi
 export EMBEDDING_DIMS=768
 if [[ "$CORPUS" == "eng"* ]]; then
   export EMBEDDING_DIMS=1024
-  export EMBEDDING_MODEL_NAME="roberta-large"
+  export EMBEDDING_MODEL_NAME="bert-large-cased"
 elif [[ "$CORPUS" == "fas"* ]]; then
   export EMBEDDING_MODEL_NAME="HooshvareLab/bert-fa-base-uncased"
 elif [[ "$CORPUS" == "deu"* ]]; then
@@ -42,8 +42,8 @@ elif [[ "$CORPUS" == "zho"* ]]; then
   #export EMBEDDING_DIMS=1024
   export EMBEDDING_MODEL_NAME="bert-base-chinese"
 elif [[ "$CORPUS" == "nld"* ]]; then
-  #export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
-  export EMBEDDING_MODEL_NAME="pdelobelle/robbert-v2-dutch-base"
+  export EMBEDDING_MODEL_NAME="GroNLP/bert-base-dutch-cased"
+  #export EMBEDDING_MODEL_NAME="pdelobelle/robbert-v2-dutch-base"
 elif [[ "$CORPUS" == "eus"* ]]; then
   export EMBEDDING_MODEL_NAME="ixa-ehu/berteus-base-cased"
 elif [[ "$CORPUS" == "spa"* ]]; then
@@ -53,6 +53,7 @@ elif [[ "$CORPUS" == "por"* ]]; then
 elif [[ "$CORPUS" == "tur"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
 elif [[ "$CORPUS" == "rus"* ]]; then
+  #export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased-sentence"
   export EMBEDDING_MODEL_NAME="DeepPavlov/rubert-base-cased"
 else
   export EMBEDDING_DIMS=1024
