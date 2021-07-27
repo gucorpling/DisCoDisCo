@@ -53,11 +53,11 @@ local features = {
         "type": "bert_pooler",
         "pretrained_model": transformer_model_name
     },
-    "dropout": 0.0,
+    "feature_dropout": 0.0,
     //"features": features,
   },
   "data_loader": {
-    "batch_size": 4,
+    "batch_size": 16,
     "shuffle": true
   },
   "trainer": {

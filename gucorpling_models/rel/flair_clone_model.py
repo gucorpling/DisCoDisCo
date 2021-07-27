@@ -29,14 +29,14 @@ class FlairCloneModel(Model):
         vocab: Vocabulary,
         embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
-        dropout: float = 0.4,
+        feature_dropout: float = 0.4,
         features: Dict[str, Feature] = None,
         initializer: InitializerApplicator = None
     ):
         super().__init__(vocab)
         self.embedder = embedder
         self.encoder = seq2vec_encoder
-        self.dropout = torch.nn.Dropout(dropout)
+        self.feature_dropout = torch.nn.Dropout(feature_dropout)
 
         # setup handwritten feature modules
         if features is not None and len(features) > 0:
@@ -63,6 +63,8 @@ class FlairCloneModel(Model):
 
         if initializer:
             initializer(self)
+        else:
+            torch.nn.init.xavier_uniform_(self.relation_decoder.weight)
 
     def _get_combined_feature_tensor(self, kwargs):
         output_tensors = []
@@ -93,12 +95,12 @@ class FlairCloneModel(Model):
             direction.unsqueeze(-1),
         ]
         if self.feature_modules:
-            components.append(self._get_combined_feature_tensor(kwargs))
+            components.append(self.feature_dropout(self._get_combined_feature_tensor(kwargs)))
 
         combined = torch.cat(components, dim=1)
 
         # Apply dropout
-        combined = self.dropout(combined)
+        combined = self.feature_dropout(combined)
 
         # Decode the concatenated vector into relation logits
         relation_logits = self.relation_decoder(combined)

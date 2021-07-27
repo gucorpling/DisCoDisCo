@@ -43,8 +43,7 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         unit1_sent_tokens = self.tokenizer.tokenize(unit1_sent)
         unit2_txt_tokens = self.tokenizer.tokenize(unit2_txt)
         unit2_sent_tokens = self.tokenizer.tokenize(unit2_sent)
-        assert unit2_txt_tokens[0].text == "[CLS]"
-        assert unit2_sent_tokens[0].text == "[CLS]"
+        assert unit2_txt_tokens[0].text == "[CLS]", unit2_txt_tokens
         if dir == "1<2":
             left_tokens = []
             right_tokens = [Token("{")]
