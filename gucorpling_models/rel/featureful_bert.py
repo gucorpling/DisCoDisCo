@@ -187,16 +187,20 @@ class FeaturefulBert(BertPreTrainedModel):
             past_key_values_length=past_key_values_length,
         )
 
-        feature_tensor = get_combined_feature_tensor(self, kwargs)
+        segments = []
+        if self.features is not None:
+            feature_tensor = get_combined_feature_tensor(self, kwargs)
+            segments.append(feature_tensor)
         direction_tensor = kwargs.get('direction')
-        feature_tensor = torch.cat((feature_tensor, direction_tensor.unsqueeze(-1)), dim=1).to(feature_tensor.device)
+        segments.append(direction_tensor.unsqueeze(-1))
+        feature_tensor = torch.cat(segments, dim=1).to(embedding_output.device)
         padded_feature_tensor = zero_pad(feature_tensor.unsqueeze(1), embedding_output.shape[2])
         # Add the feature tensor at the 2nd position in the sequence, i.e. after CLS
         modified_embedding_output = insert_into_sequence(embedding_output, padded_feature_tensor, 1)
         # Modify the attention mask by taking the value at 0 and repeating it at the front: the value at 0 will
         # always be a non-masked value, which will get us the proper mask for the extended sequence
         modified_extended_attention_mask = torch.cat(
-            (extended_attention_mask[:, -1:, -1:, :1], extended_attention_mask),
+            (extended_attention_mask[:, :, :, :1], extended_attention_mask),
             dim=3
         )
 
