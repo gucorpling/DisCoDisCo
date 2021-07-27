@@ -110,3 +110,15 @@ def get_feature_modules(
             modules[key] = torch.nn.Embedding(size, edims, padding_idx=(0 if vocab.is_padded(ns) else None))
 
     return torch.nn.ModuleDict(modules), total_dims
+
+
+def get_combined_feature_tensor(self, kwargs):
+    output_tensors = []
+    for module_key, module in self.feature_modules.items():
+        output_tensor = module(kwargs[module_key])
+        if len(output_tensor.shape) == 1:
+            output_tensor = output_tensor.unsqueeze(-1)
+        output_tensors.append(output_tensor)
+
+    combined_feature_tensor = torch.cat(output_tensors, dim=1)
+    return combined_feature_tensor

@@ -25,39 +25,35 @@ local features = {
       "tokens": {
         "type": "pretrained_transformer",
         "model_name": transformer_model_name,
-        "max_length": 512
+        "max_length": 511
       }
     },
     "tokenizer": {
       "type": "pretrained_transformer",
       "model_name": transformer_model_name
     },
-    //"features": features
+    "features": features
   },
   "train_data_path": std.extVar("TRAIN_DATA_PATH"),
   "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
   "model": {
     "type": "disrpt_2021_flair_clone",
     "embedder": {
-      "token_embedders": {
-        "tokens": {
-          "type": "pretrained_transformer",
-          "model_name": transformer_model_name,
-          "max_length": 512,
-          "train_parameters": true,
-          "last_layer_only": true
-        }
-      }
+      "type": "featureful_bert",
+      "model_name": transformer_model_name,
+      "max_length": 511,
+      "train_parameters": true,
+      "last_layer_only": true
     },
     "seq2vec_encoder": {
         "type": "bert_pooler",
         "pretrained_model": transformer_model_name
     },
     "feature_dropout": 0.0,
-    //"features": features,
+    "features": features,
   },
   "data_loader": {
-    "batch_size": 16,
+    "batch_size": 4,
     "shuffle": true
   },
   "trainer": {

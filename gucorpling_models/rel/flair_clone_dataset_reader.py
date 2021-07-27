@@ -52,8 +52,10 @@ class Disrpt2021FlairCloneReader(DatasetReader):
 
         if dir == "1<2":
             left_tokens = []
-            right_tokens = [Token("{")]
-            dir_tokens = self.tokenizer.tokenize(sep_token.text + " <")[1:-1]
+            right_tokens = []
+            dir_tokens = []
+            #right_tokens = [Token("{")]
+            #dir_tokens = self.tokenizer.tokenize(sep_token.text + " <")[1:-1]
             #print(dir_tokens)
             #dir_tokens = [Token(t) for t in ['[', 'SE', '##P', ']', '<', '<']]
             #dir_tokens = [Token("<<"), Token("[SEP]"), Token("<<")]
@@ -61,7 +63,9 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         else:
             left_tokens = [Token("}")]
             right_tokens = []
-            dir_tokens = self.tokenizer.tokenize("> " + sep_token.text)[1:-1]
+            dir_tokens = []
+            #right_tokens = []
+            #dir_tokens = self.tokenizer.tokenize("> " + sep_token.text)[1:-1]
             #dir_tokens = [Token(t) for t in ['>', '>', '[', 'SE', '##P', ']']]
             #dir_tokens = [Token(">>"), Token("[SEP]"), Token(">>")]
             #dir_tokens = [Token(">>["), Token("SEP"), Token("]")]

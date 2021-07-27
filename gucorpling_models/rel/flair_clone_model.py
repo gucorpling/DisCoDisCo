@@ -6,11 +6,11 @@ import torch.nn.functional as F
 
 from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import TextFieldEmbedder, FeedForward, Seq2VecEncoder
-from allennlp.nn import util, InitializerApplicator, Activation
-from allennlp.nn.util import sequence_cross_entropy_with_logits
+from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, TokenEmbedder
+from allennlp.nn import util, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
-from gucorpling_models.features import Feature, get_feature_modules
+from gucorpling_models.features import Feature, get_feature_modules, get_combined_feature_tensor
+from gucorpling_models.rel.featureful_bert_embedder import FeaturefulBertEmbedder
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class FlairCloneModel(Model):
     def __init__(
         self,
         vocab: Vocabulary,
-        embedder: TextFieldEmbedder,
+        embedder: TokenEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         feature_dropout: float = 0.4,
         features: Dict[str, Feature] = None,
@@ -35,6 +35,8 @@ class FlairCloneModel(Model):
     ):
         super().__init__(vocab)
         self.embedder = embedder
+        if isinstance(embedder, FeaturefulBertEmbedder) and features is not None:
+            embedder.init_feature_modules(features, vocab)
         self.encoder = seq2vec_encoder
         self.feature_dropout = torch.nn.Dropout(feature_dropout)
 
@@ -46,7 +48,7 @@ class FlairCloneModel(Model):
             self.feature_modules = None
             feature_dims = 0
         # direction
-        feature_dims += 1
+        #feature_dims += 1
         self.num_relations = vocab.get_vocab_size("relation_labels")
 
         self.relation_decoder = torch.nn.Linear(self.encoder.get_output_dim() + feature_dims, self.num_relations)
@@ -66,17 +68,6 @@ class FlairCloneModel(Model):
         else:
             torch.nn.init.xavier_uniform_(self.relation_decoder.weight)
 
-    def _get_combined_feature_tensor(self, kwargs):
-        output_tensors = []
-        for module_key, module in self.feature_modules.items():
-            output_tensor = module(kwargs[module_key])
-            if len(output_tensor.shape) == 1:
-                output_tensor = output_tensor.unsqueeze(-1)
-            output_tensors.append(output_tensor)
-
-        combined_feature_tensor = torch.cat(output_tensors, dim=1)
-        return combined_feature_tensor
-
     def forward(  # type: ignore
         self,
         combined_body: TextFieldTensors,
@@ -86,16 +77,20 @@ class FlairCloneModel(Model):
         **kwargs
     ) -> Dict[str, torch.Tensor]:
 
+        embedder_params = combined_body["tokens"]
+        embedder_params["direction"] = direction
+        embedder_params.update(kwargs)
+        embedded_sentence = self.embedder(**embedder_params)
+
         mask = util.get_text_field_mask(combined_body)
-        embedded_sentence = self.embedder(combined_body)
         sentence_embedding = self.encoder(embedded_sentence, mask)
 
         components = [
             sentence_embedding,
-            direction.unsqueeze(-1),
+            #direction.unsqueeze(-1),
         ]
         if self.feature_modules:
-            components.append(self.feature_dropout(self._get_combined_feature_tensor(kwargs)))
+            components.append(self.feature_dropout(get_combined_feature_tensor(self, kwargs)))
 
         combined = torch.cat(components, dim=1)
 
