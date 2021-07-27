@@ -24,14 +24,35 @@ local features = {
       },
       "label_namespace": "distance_labels"
     },
-    "lex_overlap_length": {"source_key": "lex_overlap_length"}
+    "lex_overlap_length": {
+      "source_key": "lex_overlap_length",
+      "xform_fn": {
+        "type": "bins",
+        "bins": [[0, 2], [2, 7], [7, 1000]]
+      },
+      "label_namespace": "lex_overlap"
+    }
   },
   "corpus": corpus_name,
   // By default, we will use all features for a corpus, but they can be overridden below.
   // The values inside the array need to match a key under the "features" dict above.
   "corpus_configs": {
+    "deu.rst.pcc": ["distance"],
+    "eng.pdtb.pdtb": ["distance"],
+    "eng.rst.gum": ["distance"],
+    "eng.rst.rstdt": ["distance"],
+    "eng.sdrt.stac": ["distance", "same_speaker"],
+    "eus.rst.ert": ["distance"],
+    "fas.rst.prstc": ["distance"],
+    "fra.sdrt.annodis": ["distance"],
+    "nld.rst.nldt": ["distance"],
+    "por.rst.cstn": ["distance"],
+    "rus.rst.rrt": ["distance"],
+    "spa.rst.rststb": ["distance"],
+    "spa.rst.sctb": ["distance"],
+    "tur.pdtb.tdb": ["distance"],
+    "zho.pdtb.cdtb": ["distance"],
     "zho.rst.sctb": ["distance"],
-    "eng.sdrt.stac": ["same_speaker"]
   }
 };
 
