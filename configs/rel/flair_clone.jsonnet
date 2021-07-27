@@ -91,7 +91,7 @@ local features = {
     "features": features,
   },
   "data_loader": {
-    "batch_size": 8,
+    "batch_size": 4,
     "shuffle": true
   },
   "trainer": {

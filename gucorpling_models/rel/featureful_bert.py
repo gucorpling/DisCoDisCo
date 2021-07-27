@@ -5,7 +5,7 @@ from allennlp.data import Vocabulary
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 from transformers.models.bert.modeling_bert import BertPooler, BertEncoder, BertEmbeddings, BertPreTrainedModel
 
-from gucorpling_models.features import get_feature_modules, Feature, get_combined_feature_tensor, FeatureBundle
+from gucorpling_models.features import get_feature_modules, get_combined_feature_tensor, FeatureBundle
 
 
 def insert_into_sequence(batched_sequence, batched_sequence_item, sequence_position):

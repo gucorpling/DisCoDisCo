@@ -21,12 +21,14 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
+        max_length: int = 511,
         features: FeatureBundle = None,
         **kwargs
     ):
         super().__init__(**kwargs)
         self.tokenizer = tokenizer
         self.token_indexers = token_indexers
+        self.max_length = max_length
         self.features = features
 
     def text_to_instance(  # type: ignore
@@ -78,8 +80,8 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         )
 
         fields: Dict[str, Field] = {
-            "combined_body": TextField(combined_txt_tokens, self.token_indexers),
-            "combined_sentence": TextField(combined_sent_tokens, self.token_indexers),
+            "combined_body": TextField(combined_txt_tokens[:self.max_length], self.token_indexers),
+            "combined_sentence": TextField(combined_sent_tokens[:self.max_length], self.token_indexers),
             "direction": LabelField(dir, label_namespace="direction_labels"),
         }
 
