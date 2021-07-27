@@ -36,6 +36,10 @@ class FlairCloneModel(Model):
         # For some reason, this label appears in test but never in train
         if features.corpus == "spa.rst.sctb":
             vocab.add_token_to_namespace("enablement", "relation_labels")
+        elif features.corpus == "spa.rst.rststb":
+            vocab.add_token_to_namespace("background", "relation_labels")
+        elif features.corpus == "nld.rst.nldt":
+            vocab.add_token_to_namespace("span", "relation_labels")
         super().__init__(vocab)
         self.embedder = embedder
         if isinstance(embedder, FeaturefulBertEmbedder) and features is not None:
