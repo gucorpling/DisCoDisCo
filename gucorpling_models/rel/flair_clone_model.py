@@ -34,7 +34,7 @@ class FlairCloneModel(Model):
         initializer: InitializerApplicator = None
     ):
         # For some reason, this label appears in test but never in train
-        if features.corpus == "spa.rst.sdrt":
+        if features.corpus == "spa.rst.sctb":
             vocab.add_token_to_namespace("enablement", "relation_labels")
         super().__init__(vocab)
         self.embedder = embedder
