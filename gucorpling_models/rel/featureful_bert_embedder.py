@@ -17,7 +17,7 @@ from allennlp.modules.scalar_mix import ScalarMix
 from allennlp.modules.token_embedders.token_embedder import TokenEmbedder
 from allennlp.nn.util import batched_index_select
 
-from gucorpling_models.features import Feature, get_feature_modules
+from gucorpling_models.features import Feature, get_feature_modules, FeatureBundle
 from gucorpling_models.rel.featureful_bert import FeaturefulBert
 
 logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ class FeaturefulBertEmbedder(TokenEmbedder):
         else:
             return 0
 
-    def init_feature_modules(self, features: Dict[str, Feature], vocab: Vocabulary):
+    def init_feature_modules(self, features: FeatureBundle, vocab: Vocabulary):
         self.transformer_model.init_feature_modules(features, vocab)
 
     @overrides

@@ -9,7 +9,7 @@ from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WhitespaceTokenizer
 
-from gucorpling_models.features import Feature, get_feature_field
+from gucorpling_models.features import Feature, get_feature_field, FeatureBundle
 from gucorpling_models.rel.features import process_relfile
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class Disrpt2021FlairCloneReader(DatasetReader):
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
-        features: Dict[str, Feature] = None,
+        features: FeatureBundle = None,
         **kwargs
     ):
         super().__init__(**kwargs)
@@ -96,9 +96,13 @@ class Disrpt2021FlairCloneReader(DatasetReader):
 
         # read in handcrafted features
         if self.features is not None:
-            for feature_name, feature_config in self.features.items():
+            features_configs = self.features.features
+
+            for feature_name, feature_config in features_configs.items():
                 if feature_name not in features:
                     raise Exception(f"Feature {feature_name} not found. Pair:\n  {unit1_txt}\n  {unit2_txt}")
+                if feature_name not in self.features.corpus_keys:
+                    continue
                 feature_data = features[feature_name]
                 fields[feature_name] = get_feature_field(feature_config, feature_data)
 

@@ -5,7 +5,7 @@ from allennlp.data import Vocabulary
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 from transformers.models.bert.modeling_bert import BertPooler, BertEncoder, BertEmbeddings, BertPreTrainedModel
 
-from gucorpling_models.features import get_feature_modules, Feature, get_combined_feature_tensor
+from gucorpling_models.features import get_feature_modules, Feature, get_combined_feature_tensor, FeatureBundle
 
 
 def insert_into_sequence(batched_sequence, batched_sequence_item, sequence_position):
@@ -58,9 +58,9 @@ class FeaturefulBert(BertPreTrainedModel):
         self.feature_modules = None
         self.feature_dims = None
 
-    def init_feature_modules(self, features: Dict[str, Feature], vocab: Vocabulary):
+    def init_feature_modules(self, features: FeatureBundle, vocab: Vocabulary):
         self.features = features
-        if features is not None and len(features) > 0:
+        if features.features is not None and len(features.features) > 0:
             feature_modules, feature_dims = get_feature_modules(features, vocab)
             self.feature_modules = feature_modules
         else:
@@ -188,7 +188,7 @@ class FeaturefulBert(BertPreTrainedModel):
         )
 
         segments = []
-        if self.features is not None:
+        if self.features is not None and len(self.features.corpus_keys) > 0:
             feature_tensor = get_combined_feature_tensor(self, kwargs)
             segments.append(feature_tensor)
         direction_tensor = kwargs.get('direction')

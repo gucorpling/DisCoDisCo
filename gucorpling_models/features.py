@@ -33,11 +33,39 @@ class AbsNaturalLog(TransformationFunction):
             return math.log(abs(xs))
 
 
+@TransformationFunction.register("bins")
+class Bins(TransformationFunction):
+    def __init__(self, bins: List[Tuple[int, int]]):
+        # bins is a list of ints such that any value falls into it iff `bin[0] <= x < bin[1]`
+        self.bins = bins
+
+    def _bin(self, x):
+        for i, (start, end) in enumerate(self.bins):
+            if start <= x < end:
+                return str(i)
+        raise Exception(f"No bin found for value {x}! Bins: {self.bins}")
+
+    def __call__(self, xs, tokenwise):
+        if tokenwise:
+            return [self._bin(x) for x in xs]
+        else:
+            return self._bin(xs)
+
+
 class Feature(FromParams):
     def __init__(self, source_key: str, label_namespace: str = None, xform_fn: TransformationFunction = None):
         self.source_key = source_key
         self.label_namespace = label_namespace
         self.xform_fn = xform_fn
+
+
+class FeatureBundle(FromParams):
+    def __init__(self, features: Dict[str, Feature], corpus: str, corpus_configs: Dict[str, List[str]]):
+        self.features = features
+        self.corpus = corpus
+        # Use a corpus-specific subset of features if provided, else the default
+        self.corpus_keys = corpus_configs[corpus] if corpus in corpus_configs else list(features.keys())
+        print("Using keys " + str(self.corpus_keys) + " for " + corpus)
 
 
 def get_feature_field(feature_config: Feature, features: Union[List[Any], Any], sentence: TextField = None) -> Field:
@@ -75,7 +103,7 @@ def get_feature_field(feature_config: Feature, features: Union[List[Any], Any], 
 
 
 def get_feature_modules(
-    features: Dict[str, Feature], vocab: Vocabulary
+    features: Union[Dict[str, Feature], FeatureBundle], vocab: Vocabulary
 ) -> Tuple[torch.nn.ModuleDict, int]:
     """
     Returns a PyTorch `ModuleDict` containing a module for each feature in `token_features`.
@@ -94,7 +122,14 @@ def get_feature_modules(
     """
     modules: Dict[str, torch.nn.Module] = {}
     total_dims = 0
-    for key, config in features.items():
+    if isinstance(features, FeatureBundle):
+        keys = features.corpus_keys
+        config_dict = features.features
+    else:
+        keys = features.keys()
+        config_dict = features
+    for key in keys:
+        config = config_dict[key]
         ns = config.label_namespace
         if ns is None:
             modules[key] = torch.nn.Identity()

@@ -9,7 +9,7 @@ from allennlp.models.model import Model
 from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, TokenEmbedder
 from allennlp.nn import util, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
-from gucorpling_models.features import Feature, get_feature_modules, get_combined_feature_tensor
+from gucorpling_models.features import Feature, get_feature_modules, get_combined_feature_tensor, FeatureBundle
 from gucorpling_models.rel.featureful_bert_embedder import FeaturefulBertEmbedder
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class FlairCloneModel(Model):
         embedder: TokenEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         feature_dropout: float = 0.4,
-        features: Dict[str, Feature] = None,
+        features: FeatureBundle = None,
         initializer: InitializerApplicator = None
     ):
         super().__init__(vocab)
@@ -41,7 +41,7 @@ class FlairCloneModel(Model):
         self.feature_dropout = torch.nn.Dropout(feature_dropout)
 
         # setup handwritten feature modules
-        if features is not None and len(features) > 0:
+        if features is not None and len(features.corpus_keys) > 0:
             feature_modules, feature_dims = get_feature_modules(features, vocab)
             self.feature_modules = feature_modules
         else:

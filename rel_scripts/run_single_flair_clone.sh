@@ -9,6 +9,7 @@ if [[ ! -d "data/" ]]; then
 fi
 
 CORPUS="$1"
+export CORPUS
 CORPUS_DIR="data/2021/${1}"
 MODEL_DIR=${2:-models}/${CORPUS}_flair_clone
 
@@ -35,7 +36,7 @@ elif [[ "$CORPUS" == "deu"* ]]; then
   #export EMBEDDING_DIMS=1024
   #export EMBEDDING_MODEL_NAME="deepset/gelectra-large"
   #export EMBEDDING_MODEL_NAME="deepset/gbert-large"
-	export EMBEDDING_MODEL_NAME="bert-base-german-cased"
+  export EMBEDDING_MODEL_NAME="bert-base-german-cased"
 elif [[ "$CORPUS" == "fra"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
@@ -58,34 +59,6 @@ elif [[ "$CORPUS" == "rus"* ]]; then
 else
   export EMBEDDING_DIMS=1024
   export EMBEDDING_MODEL_NAME="xlm-roberta-large"
-fi
-
-# use fastText embeddings
-if [[ "$CORPUS" == "eng"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.en.300.vec"
-elif [[ "$CORPUS" == "deu"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.de.300.vec"
-elif [[ "$CORPUS" == "eus"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.eu.300.vec"
-elif [[ "$CORPUS" == "fas"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fa.300.vec"
-elif [[ "$CORPUS" == "fra"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fr.300.vec"
-elif [[ "$CORPUS" == "nld"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
-elif [[ "$CORPUS" == "por"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.pt.300.vec"
-elif [[ "$CORPUS" == "rus"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.ru.300.vec"
-elif [[ "$CORPUS" == "spa"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.es.300.vec"
-elif [[ "$CORPUS" == "tur"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
-elif [[ "$CORPUS" == "zho"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.zh.300.vec"
-else
-  echo "Couldn't find a fasttext embedding for \"$CORPUS\"" >&2
-  exit 1
 fi
 
 
