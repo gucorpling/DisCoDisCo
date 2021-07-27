@@ -56,6 +56,27 @@ local features = {
   }
 };
 
+// For small corpora, make this number reflect the size of train
+// For larger corpora, use a smaller number, aiming for 1/3 of total size
+local batches_per_epoch = {
+  "deu.rst.pcc": 541,
+  "eng.pdtb.pdtb": 3000, // real: 10980
+  "eng.rst.gum": 1700, // real: 3475
+  "eng.rst.rstdt": 2000, // real: 4001
+  "eng.sdrt.stac": 1200, // real: 2395
+  "eus.rst.ert": 634,
+  "fas.rst.prstc": 1025,
+  "fra.sdrt.annodis": 547,
+  "nld.rst.nldt": 402,
+  "por.rst.cstn": 1037,
+  "rus.rst.rrt": 2500, // real: 7217
+  "spa.rst.rststb": 560,
+  "spa.rst.sctb": 110,
+  "tur.pdtb.tdb": 613,
+  "zho.pdtb.cdtb": 915,
+  "zho.rst.sctb": 110
+};
+
 {
   "dataset_reader" : {
     "type": "disrpt_2021_rel_flair_clone",
@@ -91,6 +112,7 @@ local features = {
     "features": features,
   },
   "data_loader": {
+    "batches_per_epoch": batches_per_epoch[corpus_name],
     "batch_size": 4,
     "shuffle": true
   },
