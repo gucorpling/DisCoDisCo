@@ -20,7 +20,7 @@ local features = {
       "source_key": "distance",
       "xform_fn": {
         "type": "bins",
-        "bins": [[0, 2], [2, 8], [8, 1000]]
+        "bins": [[-1e9, -8], [-8, -2], [-2, 0], [0, 2], [2, 8], [8, 1e9]]
       },
       "label_namespace": "distance_labels"
     },
@@ -28,7 +28,7 @@ local features = {
       "source_key": "lex_overlap_length",
       "xform_fn": {
         "type": "bins",
-        "bins": [[0, 2], [2, 7], [7, 1000]]
+        "bins": [[0, 2], [2, 7], [7, 1e9]]
       },
       "label_namespace": "lex_overlap"
     }
