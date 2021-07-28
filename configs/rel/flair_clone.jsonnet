@@ -113,6 +113,9 @@ local batches_per_epoch = {
   },
   "data_loader": {
     "batches_per_epoch": batches_per_epoch[corpus_name],
+    // NOTE: if you need to change batch size, scale batches_per_epoch, which assumes
+    // a batch size of 4, by an appropriate amount. E.g., if you need to make batch
+    // size 2, then use `batches_per_epoch[corpus_name] * 2`
     "batch_size": 4,
     "shuffle": true
   },
