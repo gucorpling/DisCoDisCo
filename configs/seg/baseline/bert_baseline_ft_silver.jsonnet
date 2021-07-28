@@ -1,5 +1,6 @@
 local transformer_model_name = std.extVar("EMBEDDING_MODEL_NAME");
 local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS")) + 64 * 2 + 300;
+local corpus_name = std.extVar("CORPUS");
 local context_hidden_size = 400;
 local encoder_hidden_dim = 512;
 
@@ -25,6 +26,27 @@ local token_features = {
     "document_depth": {"source_key": "sent_doc_percentile"},
     "sentence_length": {"source_key": "s_len", "xform_fn": "natural_log"},
     "token_lengths": {"source_key": "tok_len", "xform_fn": "natural_log"}
+};
+
+// For small corpora, make this number reflect the size of train
+// For larger corpora, use a smaller number, aiming for 1/3 of total size
+local batches_per_epoch = {
+  "deu.rst.pcc": 541,
+  "eng.pdtb.pdtb": 3000, // real: 10980
+  "eng.rst.gum": 1700, // real: 3475
+  "eng.rst.rstdt": 2000, // real: 4001
+  "eng.sdrt.stac": 1200, // real: 2395
+  "eus.rst.ert": 634,
+  "fas.rst.prstc": 1025,
+  "fra.sdrt.annodis": 547,
+  "nld.rst.nldt": 402,
+  "por.rst.cstn": 1037,
+  "rus.rst.rrt": 2500, // real: 7217
+  "spa.rst.rststb": 560,
+  "spa.rst.sctb": 110,
+  "tur.pdtb.tdb": 613,
+  "zho.pdtb.cdtb": 915,
+  "zho.rst.sctb": 110
 };
 
 // For more info on config files generally, see https://guide.allennlp.org/using-config-files
@@ -86,7 +108,8 @@ local token_features = {
     "train_data_path": std.extVar("TRAIN_DATA_PATH"),
     "validation_data_path": std.extVar("VALIDATION_DATA_PATH"),
     "data_loader": {
-        "batch_size": 2,
+        "batches_per_epoch": batches_per_epoch[corpus_name],
+        "batch_size": 4,
         "shuffle": true
     },
     "trainer": {
