@@ -30,7 +30,8 @@ elif [[ "$CORPUS" == "fas"* ]]; then
 #  export EMBEDDING_DIMS=1024
 #  export EMBEDDING_MODEL_NAME="deepset/gbert-large"
 elif [[ "$CORPUS" == "fra"* ]]; then
-  export EMBEDDING_MODEL_NAME="dbmdz/bert-base-french-europeana-cased"
+  export EMBEDDING_DIMS=1024
+  export EMBEDDING_MODEL_NAME="flaubert/flaubert_large_cased"
 elif [[ "$CORPUS" == "zho"* ]]; then
   #export EMBEDDING_DIMS=1024
   #export EMBEDDING_MODEL_NAME="hfl/chinese-electra-180g-large-discriminator"
