@@ -29,7 +29,8 @@ fi
 export EMBEDDING_DIMS=768
 if [[ "$CORPUS" == "eng"* ]]; then
   export EMBEDDING_DIMS=1024
-  export EMBEDDING_MODEL_NAME="SpanBERT/spanbert-large-cased"
+  export EMBEDDING_MODEL_NAME="bert-large-cased"
+  #export EMBEDDING_MODEL_NAME="SpanBERT/spanbert-base-cased"
 elif [[ "$CORPUS" == "fas"* ]]; then
   export EMBEDDING_MODEL_NAME="HooshvareLab/bert-fa-base-uncased"
 elif [[ "$CORPUS" == "deu"* ]]; then
