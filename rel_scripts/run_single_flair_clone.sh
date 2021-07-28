@@ -87,6 +87,7 @@ allennlp predict \
         $MODEL_DIR \
         $TEST_DATA_PATH \
         --silent \
+	--cuda-device 0 \
         --use-dataset-reader \
         --output-file $OUTPUT_FILE_PATH
 
