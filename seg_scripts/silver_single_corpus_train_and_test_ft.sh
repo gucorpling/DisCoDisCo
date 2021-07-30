@@ -6,7 +6,7 @@ if [ $# -eq 0 ]; then
 fi
 CORPUS="$1"
 export CORPUS
-CORPUS_DIR="data/2021/${1}"
+CORPUS_DIR="data/2021_silver/${1}"
 MODEL_DIR=${2:-models}/${CORPUS}_seg_bert_baseline_ft_silver
 if [[ ! -d $CORPUS_DIR ]]; then
   echo "Corpus \"$CORPUS_DIR\" not found"
