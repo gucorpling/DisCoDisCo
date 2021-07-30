@@ -145,6 +145,7 @@ if __name__ == "__main__":
                 tok_index = 0
                 doc_index = 0
                 for i in range(start, len(sentences)):
+                    t_n = 0
                     # import pdb; pdb.set_trace();
                     lns = str(data.sentences[i]).split('\n')
                     for j in range(len(sentences[i])):
@@ -154,14 +155,15 @@ if __name__ == "__main__":
                             st += '# newdoc id = ' + inf['docs'][doc_index + 1] + '\n'
                             tok_index = 0
                             doc_index += 1
+                            t_n = 0
                         ann = lns[j].split('\t')
                         if ann[1] != inf['toks'][doc_index][tok_index]:
                             if not (ann[1] == '&' and inf['toks'][doc_index][tok_index] == '&amp;'):
                                 print("tokens not matching")
-                                print(ann[1]+'\n'+inf['toks'][doc_index][tok_index])
-                                print(inf['toks'][doc_index][tok_index+1])
-                                if inf['toks'][doc_index][tok_index+1]==ann[1]:
-                                    tok_index+=1
+                                print(ann[1] + '\n' + inf['toks'][doc_index][tok_index])
+                                print(inf['toks'][doc_index][tok_index + 1])
+                                if inf['toks'][doc_index][tok_index + 1] == ann[1]:
+                                    tok_index += 1
                                     print("+1")
                         # import pdb; pdb.set_trace();
                         res = ann[0] + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + \
@@ -171,5 +173,6 @@ if __name__ == "__main__":
                               ann[8] + '\t' + ann[9] + '\n'
                         tok_index += 1
                         st += res
+                        t_n += 1
                     st += '\n'
                 of.write(st)
