@@ -216,9 +216,9 @@ class FlairSentSplitter:
         if "deu" in lang:
             embd = "bert-base-german-cased"
         elif "eus" in lang:
-            embd = "mrm8488/RoBasquERTa"
+            embd = "ixa-ehu/berteus-base-cased"
         elif "zho" in lang:
-            embd = "bert-base-chinese"
+            embd = "hfl/chinese-roberta-wwm-ext-large"
         elif "tur" in lang:
             embd = "dbmdz/bert-base-turkish-cased"
         elif "eng" in lang:
@@ -233,6 +233,8 @@ class FlairSentSplitter:
             embd="GroNLP/bert-base-dutch-cased"
         elif "rus" in lang:
             embd="blinoff/roberta-base-russian-v0"
+        elif "fas" in lang:
+            embd="HooshvareLab/bert-fa-zwnj-base"
 
 
         # initialize embeddings
