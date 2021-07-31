@@ -166,7 +166,7 @@ if __name__ == "__main__":
                                     tok_index += 1
                                     print("+1")
                         # import pdb; pdb.set_trace();
-                        res = ann[0] + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + \
+                        res = str(t_n) + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + \
                               tags['pos1'][i][
                                   j] + '\t' + tags['pos2'][i][j] + '\t' + ann[5] + '\t' + ann[6] + '\t' + ann[
                                   7] + '\t' + \
