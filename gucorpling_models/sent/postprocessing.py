@@ -145,7 +145,7 @@ if __name__ == "__main__":
                 tok_index = 0
                 doc_index = 0
                 for i in range(start, len(sentences)):
-                    t_n = 0
+                    t_n = 1
                     # import pdb; pdb.set_trace();
                     lns = str(data.sentences[i]).split('\n')
                     for j in range(len(sentences[i])):
@@ -155,7 +155,7 @@ if __name__ == "__main__":
                             st += '# newdoc id = ' + inf['docs'][doc_index + 1] + '\n'
                             tok_index = 0
                             doc_index += 1
-                            t_n = 0
+                            t_n = 1
                         ann = lns[j].split('\t')
                         if ann[1] != inf['toks'][doc_index][tok_index]:
                             if not (ann[1] == '&' and inf['toks'][doc_index][tok_index] == '&amp;'):
