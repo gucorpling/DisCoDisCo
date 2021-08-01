@@ -29,6 +29,7 @@ if __name__ == "__main__":
         new_sents = []
         count = 0
         name = data_dir.split('/')[-2]
+        print('\n'+name+'\n')
         tok_index = 0
         doc_index = 0
         with open(opts.inf + '/' + name + '/docs_tokens_' + opts.mode + '.json') as f:
@@ -37,12 +38,14 @@ if __name__ == "__main__":
         for j in range(len(sents)):
             if sents[j]=="<s>":
                 count=0
-            if doc_count==len(inf['toks'][doc_index]) and sents[j+1] != "</s>":
+            if doc_count==len(inf['toks'][doc_index])-1 and sents[j+1] != "</s>" and sents[j]!="</s>" and sents[j]!="<s>":
                 doc_count=0
                 doc_index+=1
+                new_sents.append(sents[j])
                 new_sents.append("</s>")
                 new_sents.append("<s>")
                 count=0
+                continue
             if count == 256 and sents[j] != "</s>":
                 print(">256")
                 new_sents.append("</s>")
@@ -51,7 +54,8 @@ if __name__ == "__main__":
 
             new_sents.append(sents[j])
             count += 1
-            doc_count+=1
+            if sents[j]!= "<s>" and sents[j]!= "</s>":
+                doc_count+=1
 
         with open(data_dir + '/sent_' + opts.mode + '.predV2', 'w') as out:
             for s in new_sents:
