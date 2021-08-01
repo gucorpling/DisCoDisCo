@@ -1,5 +1,6 @@
 from glob import glob
 from argparse import ArgumentParser
+import json
 
 if __name__ == "__main__":
 
@@ -8,6 +9,7 @@ if __name__ == "__main__":
                                         "file")
     p.add_argument("-m", "--mode", help="train/test/dev",
                    default="dev")
+    p.add_argument("-i", "--inf", help="dir containing doc info, output of get_docs_inof.py")
     opts = p.parse_args()
 
     folders = glob(opts.file + '/' + '*/')
@@ -26,16 +28,30 @@ if __name__ == "__main__":
                 sents.append(line)
         new_sents = []
         count = 0
+        name = data_dir.split('/')[-2]
+        tok_index = 0
+        doc_index = 0
+        with open(opts.inf + '/' + name + '/docs_tokens_' + opts.mode + '.json') as f:
+            inf = json.load(f)
+            doc_count=0
         for j in range(len(sents)):
             if sents[j]=="<s>":
+                count=0
+            if doc_count==len(inf['toks'][doc_index]) and sents[j+1] != "</s>":
+                doc_count=0
+                doc_index+=1
+                new_sents.append("</s>")
+                new_sents.append("<s>")
                 count=0
             if count == 256 and sents[j] != "</s>":
                 print(">256")
                 new_sents.append("</s>")
                 new_sents.append("<s>")
                 count = 0
+
             new_sents.append(sents[j])
             count += 1
+            doc_count+=1
 
         with open(data_dir + '/sent_' + opts.mode + '.predV2', 'w') as out:
             for s in new_sents:
