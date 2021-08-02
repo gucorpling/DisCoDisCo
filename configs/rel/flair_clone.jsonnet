@@ -18,8 +18,6 @@ local features = {
     "length_ratio": {"source_key": "length_ratio"},
     "same_speaker": {"source_key": "same_speaker", "label_namespace": "same_speaker"},
     "doclen": {"source_key": "doclen"},
-    "u1_position": {"source_key": "u1_position"},
-    "u2_position": {"source_key": "u2_position"},
     //"distance": {"source_key": "distance"},
     "distance": {
       "source_key": "distance",
@@ -28,6 +26,24 @@ local features = {
         "bins": [[-1e9, -8], [-8, -2], [-2, 0], [0, 2], [2, 8], [8, 1e9]]
       },
       "label_namespace": "distance_labels"
+    },
+    "u1_position": {
+    "source_key": "u1_position",
+    "xform_fn": {
+      "type": "binsF",
+      "bins": [[0.0, 0.1], [0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5], [0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0], [1.0, 1e9]]
+      //"bins": [[0.0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0], [1.0, 1e9]]
+    },
+    "label_namespace": "u1_position_labels"
+    }, 
+    "u2_position": {
+    "source_key": "u2_position",
+    "xform_fn": {
+      "type": "binsF",
+      "bins": [[0.0, 0.1], [0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5], [0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0], [1.0, 1e9]]
+      //"bins": "bins": [[0.0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0], [1.0, 1e9]]
+    },
+    "label_namespace": "u2_position_labels"
     },
     "lex_overlap_length": {
       "source_key": "lex_overlap_length",
@@ -45,10 +61,10 @@ local features = {
     "deu.rst.pcc": ["distance", "u1_depdir", "u2_depdir", "u2_func", "u1_position", "u2_position",
                     "sat_children", "nuc_children"],
     "eng.pdtb.pdtb": ['u2_depdir', 'u2_func', 'u2_issent', 'u2_position', 'length_ratio'],
-    "eng.rst.gum": ["distance", "same_speaker", "u2_func", "u2_depdir", "unit1_case","unit2_case", "nuc_children",
+    "eng.rst.gum": ["distance", "same_speaker", "u2_func", "u2_depdir", "unit1_case", "unit2_case", "nuc_children",
                     "sat_children", "genre", "lex_overlap_length", "u2_discontinuous", "u1_discontinuous",
                     "u1_position", "u2_position"],
-    "eng.rst.rstdt": ["distance", "u2_discontinuous", "u2_func", "u2_depdir"],
+    "eng.rst.rstdt": ['u2_discontinuous', 'u1_position', 'u2_position', 'u2_func', 'u2_issent'],
     "eng.sdrt.stac": ["same_speaker"],
     "eus.rst.ert": ["u2_position"],
     "fra.sdrt.annodis": ["u1_depdir", "u1_position"],
@@ -61,8 +77,7 @@ local features = {
     "tur.pdtb.tdb": ["distance", "u1_depdir", "u2_depdir", "u2_func", "u1_issent", "u2_issent", "length_ratio",
                      "u1_position", "u2_position"],
     "zho.pdtb.cdtb": ["distance", "u1_depdir", "u2_depdir", "u2_func", "u1_issent", "u2_issent", "length_ratio"],
-    "zho.rst.sctb": ['sat_children', 'nuc_children', 'genre', 'u2_discontinuous', 'u1_discontinuous', 'u1_depdir',
-                     'u1_func'],
+    "zho.rst.sctb": ['sat_children', 'nuc_children', 'genre', 'u2_discontinuous', 'u1_discontinuous', 'u1_depdir', 'u1_func'],
     "fas.rst.prstc": ['distance', 'nuc_children', 'sat_children', 'u2_discontinuous', 'genre'],
   }
 };
