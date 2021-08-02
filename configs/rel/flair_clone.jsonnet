@@ -129,7 +129,7 @@ local batches_per_epoch = {
     "num_epochs": 100,
     "patience": 12,
     "optimizer": {
-      "type": "adamw",
+      "type": "adamw_huggingface",
       "lr": 2e-5,
       #"weight_decay": 0.05,
       #"betas": [0.9, 0.99],
