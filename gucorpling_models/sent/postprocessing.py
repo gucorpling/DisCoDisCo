@@ -144,8 +144,8 @@ if __name__ == "__main__":
                 st = '# newdoc id = ' + inf['docs'][0] + '\n'
                 tok_index = 0
                 doc_index = 0
-                cc = 0
                 for i in range(start, len(sentences)):
+                    t_n = 1
                     # import pdb; pdb.set_trace();
                     lns = str(data.sentences[i]).split('\n')
                     for j in range(len(sentences[i])):
@@ -155,6 +155,7 @@ if __name__ == "__main__":
                             st += '# newdoc id = ' + inf['docs'][doc_index + 1] + '\n'
                             tok_index = 0
                             doc_index += 1
+                            t_n = 1
                         ann = lns[j].split('\t')
                         if ann[1] != inf['toks'][doc_index][tok_index]:
                             if not (ann[1] == '&' and inf['toks'][doc_index][tok_index] == '&amp;'):
@@ -165,16 +166,13 @@ if __name__ == "__main__":
                                     tok_index += 1
                                     print("+1")
                         # import pdb; pdb.set_trace();
-                        if inf['labels'][cc][0] != inf['toks'][doc_index][tok_index]:
-                            print("\n ERRRRRR \n")
-                        lab = inf['labels'][cc][1]
                         res = ann[0] + '\t' + inf['toks'][doc_index][tok_index] + '\t' + tags['lemma'][i][j] + '\t' + \
                               tags['pos1'][i][
                                   j] + '\t' + tags['pos2'][i][j] + '\t' + ann[5] + '\t' + ann[6] + '\t' + ann[
                                   7] + '\t' + \
-                              ann[8] + '\t' + lab + '\n'
+                              ann[8] + '\t' + ann[9] + '\n'
                         tok_index += 1
-                        cc += 1
                         st += res
+                        t_n += 1
                     st += '\n'
                 of.write(st)
