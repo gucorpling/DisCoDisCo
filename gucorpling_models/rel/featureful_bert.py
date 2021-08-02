@@ -2,6 +2,7 @@ from typing import Dict
 
 import torch
 from allennlp.data import Vocabulary
+from transformers import BertConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 from transformers.models.bert.modeling_bert import BertPooler, BertEncoder, BertEmbeddings, BertPreTrainedModel
 
@@ -43,7 +44,7 @@ class FeaturefulBert(BertPreTrainedModel):
     input to the forward pass.
     """
 
-    def __init__(self, config, add_pooling_layer=True):
+    def __init__(self, config: BertConfig, add_pooling_layer=True):
         super().__init__(config)
         self.config = config
 
@@ -57,6 +58,7 @@ class FeaturefulBert(BertPreTrainedModel):
         self.features = None
         self.feature_modules = None
         self.feature_dims = None
+        self.feature_projector = None
 
     def init_feature_modules(self, features: FeatureBundle, vocab: Vocabulary):
         self.features = features
@@ -67,6 +69,7 @@ class FeaturefulBert(BertPreTrainedModel):
             self.feature_modules = None
             feature_dims = 0
         self.feature_dims = feature_dims
+        self.feature_projector = torch.nn.Linear(feature_dims + 1, self.config.hidden_size)
 
     def get_input_embeddings(self):
         return self.embeddings.word_embeddings
@@ -194,9 +197,10 @@ class FeaturefulBert(BertPreTrainedModel):
         direction_tensor = kwargs.get('direction')
         segments.append(direction_tensor.unsqueeze(-1))
         feature_tensor = torch.cat(segments, dim=1).to(embedding_output.device)
-        padded_feature_tensor = zero_pad(feature_tensor.unsqueeze(1), embedding_output.shape[2])
+        #projected_feature_tensor = zero_pad(feature_tensor.unsqueeze(1), embedding_output.shape[2])
+        projected_feature_tensor = self.feature_projector(feature_tensor).unsqueeze(1)
         # Add the feature tensor at the 2nd position in the sequence, i.e. after CLS
-        modified_embedding_output = insert_into_sequence(embedding_output, padded_feature_tensor, 1)
+        modified_embedding_output = insert_into_sequence(embedding_output, projected_feature_tensor, 1)
         # Modify the attention mask by taking the value at 0 and repeating it at the front: the value at 0 will
         # always be a non-masked value, which will get us the proper mask for the extended sequence
         modified_extended_attention_mask = torch.cat(

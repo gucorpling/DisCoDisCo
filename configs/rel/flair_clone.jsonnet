@@ -5,11 +5,16 @@ local embedding_dim = std.parseInt(std.extVar("EMBEDDING_DIMS"));  # uniquely de
 local features = {
   "features": {
     "nuc_children": {"source_key": "nuc_children"},
+    "sat_children": {"source_key": "sat_children"},
     "genre": {"source_key": "genre", "label_namespace": "genre"},
     "u1_discontinuous": {"source_key": "u1_discontinuous", "label_namespace": "discontinuous"},
     "u2_discontinuous": {"source_key": "u2_discontinuous", "label_namespace": "discontinuous"},
     "u1_issent": {"source_key": "u1_issent", "label_namespace": "issent"},
     "u2_issent": {"source_key": "u2_issent", "label_namespace": "issent"},
+    "u1_depdir": {"source_key": "u1_depdir", "label_namespace": "depdir"},
+    "u2_depdir": {"source_key": "u2_depdir", "label_namespace": "depdir"},
+    "u1_func": {"source_key": "u1_func", "label_namespace": "func"},
+    "u2_func": {"source_key": "u2_func", "label_namespace": "func"},
     "length_ratio": {"source_key": "length_ratio"},
     "same_speaker": {"source_key": "same_speaker", "label_namespace": "same_speaker"},
     "doclen": {"source_key": "doclen"},
@@ -129,7 +134,7 @@ local batches_per_epoch = {
     "num_epochs": 100,
     "patience": 12,
     "optimizer": {
-      "type": "adamw_huggingface",
+      "type": "huggingface_adamw",
       "lr": 2e-5,
       #"weight_decay": 0.05,
       #"betas": [0.9, 0.99],
