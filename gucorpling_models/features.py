@@ -35,7 +35,7 @@ class AbsNaturalLog(TransformationFunction):
 
 @TransformationFunction.register("bins")
 class Bins(TransformationFunction):
-    def __init__(self, bins: List[Tuple[int, int]]):
+    def __init__(self, bins: List[Tuple[Union[int, float], Union[int, float]]]):
         # bins is a list of ints such that any value falls into it iff `bin[0] <= x < bin[1]`
         self.bins = bins
 
