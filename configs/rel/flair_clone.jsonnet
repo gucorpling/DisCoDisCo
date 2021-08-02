@@ -11,6 +11,8 @@ local features = {
     "u2_discontinuous": {"source_key": "u2_discontinuous", "label_namespace": "discontinuous"},
     "u1_issent": {"source_key": "u1_issent", "label_namespace": "issent"},
     "u2_issent": {"source_key": "u2_issent", "label_namespace": "issent"},
+    "unit1_case": {"source_key": "unit1_case", "label_namespace": "case"},
+    "unit2_case": {"source_key": "unit2_case", "label_namespace": "case"},
     "u1_depdir": {"source_key": "u1_depdir", "label_namespace": "depdir"},
     "u2_depdir": {"source_key": "u2_depdir", "label_namespace": "depdir"},
     "u1_func": {"source_key": "u1_func", "label_namespace": "func"},
