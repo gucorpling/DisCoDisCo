@@ -197,8 +197,8 @@ class FeaturefulBert(BertPreTrainedModel):
         direction_tensor = kwargs.get('direction')
         segments.append(direction_tensor.unsqueeze(-1))
         feature_tensor = torch.cat(segments, dim=1).to(embedding_output.device)
-        #projected_feature_tensor = zero_pad(feature_tensor.unsqueeze(1), embedding_output.shape[2])
-        projected_feature_tensor = self.feature_projector(feature_tensor).unsqueeze(1)
+        projected_feature_tensor = zero_pad(feature_tensor.unsqueeze(1), embedding_output.shape[2])
+        #projected_feature_tensor = self.feature_projector(feature_tensor).unsqueeze(1)
         # Add the feature tensor at the 2nd position in the sequence, i.e. after CLS
         modified_embedding_output = insert_into_sequence(embedding_output, projected_feature_tensor, 1)
         # Modify the attention mask by taking the value at 0 and repeating it at the front: the value at 0 will
