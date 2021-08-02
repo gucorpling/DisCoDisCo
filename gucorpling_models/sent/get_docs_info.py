@@ -11,7 +11,7 @@ opts = p.parse_args()
 DATA_DIR = opts.dir
 OUT_DIR = opts.out
 names = os.listdir(DATA_DIR + "/")
-partition = ["_train", "_dev","_test"]
+partition = ["_train", "_dev", "_test"]
 if not os.path.isdir(OUT_DIR):
     os.makedirs(OUT_DIR)
 for n in names:
@@ -33,11 +33,19 @@ for n in names:
                     continue
                 word = fields[1]
                 all_tokens[-1].append(word)
+        lables = []
+        with open(file_ + p + ".tok", 'r') as ff:
+            cc = 0
+            for ln in ff:
+                ln = ln.rstrip()
+                if ln and not ln.startswith("#"):
+                    pt = ln.split('\t')
+                    lables.append((pt[1], pt[9]))
 
         path = OUT_DIR + n + "/"
         if not os.path.exists(path):
             os.makedirs(path)
-        data = {'docs': doc_names, 'toks': all_tokens}
+        data = {'docs': doc_names, 'toks': all_tokens, 'labels': lables}
 
         with open(path + 'docs_tokens' + p + '.json', 'w') as f:
             json.dump(data, f)
