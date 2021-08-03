@@ -52,7 +52,7 @@ elif [[ "$CORPUS" == "tur"* ]]; then
 elif [[ "$CORPUS" == "zho.rst.sctb"* ]]; then
   export EMBEDDING_MODEL_NAME="hfl/chinese-bert-wwm-ext"
 elif [[ "$CORPUS" == "zho.pdtb.cdtb"* ]]; then
-  export EMBEDDING_MODEL_NAME="bert-base-cased"
+  export EMBEDDING_MODEL_NAME="bert-base-chinese"
 else
   echo "No LM configuration!"
   exit 1
