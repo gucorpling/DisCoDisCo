@@ -82,7 +82,7 @@ elif [[ "$CORPUS" == "rus"* ]]; then
 elif [[ "$CORPUS" == "spa"* ]]; then
   export FASTTEXT_EMBEDDING_FILE="embeddings/cc.es.300.vec"
 elif [[ "$CORPUS" == "tur"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.tr.300.vec"
 elif [[ "$CORPUS" == "zho"* ]]; then
   export FASTTEXT_EMBEDDING_FILE="embeddings/cc.zh.300.vec"
 else
