@@ -27,7 +27,7 @@ local features = {
         "type": "bins",
         "bins": [[-1e9, -8], [-8, -2], [-2, 0], [0, 2], [2, 8], [8, 1e9]]
       },
-      "label_namespace": "distance_labels"
+      "label_namespace": "distance"
     },
     "u1_position": {
     "source_key": "u1_position",
@@ -36,7 +36,7 @@ local features = {
       "bins": [[0.0, 0.1], [0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5], [0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0], [1.0, 1e9]]
       //"bins": [[0.0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0], [1.0, 1e9]]
     },
-    "label_namespace": "u1_position_labels"
+    "label_namespace": "u1_position"
     }, 
     "u2_position": {
     "source_key": "u2_position",
@@ -45,7 +45,7 @@ local features = {
       "bins": [[0.0, 0.1], [0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5], [0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 0.9], [0.9, 1.0], [1.0, 1e9]]
       //"bins": "bins": [[0.0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0], [1.0, 1e9]]
     },
-    "label_namespace": "u2_position_labels"
+    "label_namespace": "u2_position"
     },
     "lex_overlap_length": {
       "source_key": "lex_overlap_length",
