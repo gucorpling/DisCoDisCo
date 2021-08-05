@@ -58,6 +58,6 @@ bash rel_scripts/run_single_flair_clone.sh zho.rst.sctb
 ### Troubleshooting
 Batch size may be modified, if necessary, using the `batch_size` parameter in:
 
-* `configs/seg/baseline/bert_baseline_ft.jsonnet`
-* `configs/seg/baseline/bert_baseline_ft_silver.jsonnet`
-* `configs/rel/flair_clone.jsonnet`
+* [`configs/seg/baseline/bert_baseline_ft.jsonnet`](configs/seg/baseline/bert_baseline_ft.jsonnet)
+* [`configs/seg/baseline/bert_baseline_ft_silver.jsonnet`](configs/seg/baseline/bert_baseline_ft_silver.jsonnet)
+* [`configs/rel/flair_clone.jsonnet`](configs/rel/flair_clone.jsonnet)
