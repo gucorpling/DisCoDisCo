@@ -64,27 +64,27 @@ fi
 
 # use fastText embeddings
 if [[ "$CORPUS" == "eng"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.en.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.vec.gz"
 elif [[ "$CORPUS" == "deu"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.de.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.de.300.vec.gz"
 elif [[ "$CORPUS" == "eus"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.eu.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.eu.300.vec.gz"
 elif [[ "$CORPUS" == "fas"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fa.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fa.300.vec.gz"
 elif [[ "$CORPUS" == "fra"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.fr.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz"
 elif [[ "$CORPUS" == "nld"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.nl.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz"
 elif [[ "$CORPUS" == "por"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.pt.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.pt.300.vec.gz"
 elif [[ "$CORPUS" == "rus"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.ru.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.ru.300.vec.gz"
 elif [[ "$CORPUS" == "spa"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.es.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.es.300.vec.gz"
 elif [[ "$CORPUS" == "tur"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.tr.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.tr.300.vec.gz"
 elif [[ "$CORPUS" == "zho"* ]]; then
-  export FASTTEXT_EMBEDDING_FILE="embeddings/cc.zh.300.vec"
+  export FASTTEXT_EMBEDDING_FILE="https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.zh.300.vec.gz"
 else
   echo "Couldn't find a fasttext embedding for \"$CORPUS\"" >&2
   exit 1

@@ -14,26 +14,7 @@ conda activate disrpt
 pip install -r requirements.txt
 ```
 
-3. Download all fastText embeddings to `embeddings/`:
-
-```bash
-mkdir embeddings
-cd embeddings
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.de.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.es.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.eu.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fa.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fr.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.pt.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.ru.300.vec.gz &
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.zh.300.vec.gz &
-# wait for it to finish, and then:
-gunzip *
-```
-
-4. Ensure the 2021 shared task data is at `data/2021/`.
+3. Ensure the 2021 shared task data is at `data/2021/`.
 
 ## Experiments
 
