@@ -49,7 +49,7 @@ elif [[ "$CORPUS" == "spa"* ]]; then
   export EMBEDDING_MODEL_NAME="dccuchile/bert-base-spanish-wwm-cased"
 elif [[ "$CORPUS" == "tur"* ]]; then
   export EMBEDDING_MODEL_NAME="dbmdz/bert-base-turkish-cased"
-elif [[ "$CORPUS" == "zho.rst.sctb"* ]]; then
+elif [[ "$CORPUS" == "zho"* ]]; then
   export EMBEDDING_MODEL_NAME="hfl/chinese-bert-wwm-ext"
 else
   echo "No LM configuration!"
