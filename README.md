@@ -1,3 +1,8 @@
+# Introduction
+DisCoDisCo (**Dis**trict of **Co**lumbia **Dis**course **Co**gnoscente) is [GU Corpling](http://corpling.uis.georgetown.edu/corpling/)'s submission to the [DISRPT 2021 shared task](https://sites.google.com/georgetown.edu/disrpt2021). 
+DisCoDisCo [placed first](https://sites.google.com/georgetown.edu/disrpt2021/results) among all systems submitted to the 2021 shared task across all five subtasks.
+Consult [the official repo](https://github.com/disrpt/sharedtask2021) for more information on the shared task.
+
 # Usage
 
 ## Setup
