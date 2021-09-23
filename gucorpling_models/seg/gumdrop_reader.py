@@ -70,7 +70,7 @@ class DepFeatures:
                 wid = t[1]
                 head = t[3]
                 wid2lineid[wid] = t[2]
-                while int(head) != 0:
+                while int(head) != 0 and all(len(x) >= 4 for x in feats_s) and len([x for x in feats_s if str(x[1]) == str(head)]) > 0:
                     head_t = [x for x in feats_s if str(x[1]) == str(head)][0]
                     feats_parents[t].append(head_t)
                     head = head_t[3]
