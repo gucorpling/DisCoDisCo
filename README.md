@@ -3,6 +3,8 @@ DisCoDisCo (**Dis**trict of **Co**lumbia **Dis**course **Co**gnoscente) is [GU C
 DisCoDisCo [placed first](https://sites.google.com/georgetown.edu/disrpt2021/results) among all systems submitted to the 2021 shared task across all five subtasks.
 Consult [the official repo](https://github.com/disrpt/sharedtask2021) for more information on the shared task.
 
+See our paper here: https://arxiv.org/abs/2109.09777
+
 # Usage
 
 ## Setup
