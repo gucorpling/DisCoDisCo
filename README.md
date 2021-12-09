@@ -3,7 +3,28 @@ DisCoDisCo (**Dis**trict of **Co**lumbia **Dis**course **Co**gnoscente) is [GU C
 DisCoDisCo [placed first](https://sites.google.com/georgetown.edu/disrpt2021/results) among all systems submitted to the 2021 shared task across all five subtasks.
 Consult [the official repo](https://github.com/disrpt/sharedtask2021) for more information on the shared task.
 
-See our paper here: https://arxiv.org/abs/2109.09777
+See our paper here: https://aclanthology.org/2021.disrpt-1.6/
+
+Citation:
+
+```
+@inproceedings{gessler-etal-2021-discodisco,
+    title = "{D}is{C}o{D}is{C}o at the {DISRPT}2021 Shared Task: A System for Discourse Segmentation, Classification, and Connective Detection",
+    author = "Gessler, Luke  and
+      Behzad, Shabnam  and
+      Liu, Yang Janet  and
+      Peng, Siyao  and
+      Zhu, Yilun  and
+      Zeldes, Amir",
+    booktitle = "Proceedings of the 2nd Shared Task on Discourse Relation Parsing and Treebanking (DISRPT 2021)",
+    month = nov,
+    year = "2021",
+    address = "Punta Cana, Dominican Republic",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2021.disrpt-1.6",
+    pages = "51--62"
+}
+```
 
 # Usage
 
