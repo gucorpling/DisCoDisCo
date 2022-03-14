@@ -1,10 +1,12 @@
 #!/bin/bash
 
-#org data dir
-DATA_DIR="/disk1/shabnam/codes/data/dstrpt/2021"
-INFO="/disk1/shabnam/codes/data/dstrpt/2021-info"
-FOLDS_DIR="/disk1/shabnam/codes/data/dstrpt/2021-folds"
-PRETRAINED_DIR="/disk1/shabnam/codes/data/dstrpt/pretrained/"
+#path to org data dir:
+DATA_DIR=""
+
+#output dirs
+INFO=""
+FOLDS_DIR=""
+PRETRAINED_DIR=""
 
 fold="0"
 
