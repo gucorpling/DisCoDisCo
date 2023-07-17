@@ -42,7 +42,7 @@ conda activate disrpt
 pip install -r requirements.txt
 ```
 
-3. Ensure the 2021 shared task data is at `data/2021/`.
+3. Ensure [the 2021 shared task data](https://github.com/disrpt/sharedtask2021) is at `data/2021/`.
 
 ## Experiments
 
