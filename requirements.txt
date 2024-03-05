@@ -8,4 +8,5 @@ xgboost
 scikit-learn
 joblib
 pandas
-flair
+flair==0.7.0
+overrides<5
