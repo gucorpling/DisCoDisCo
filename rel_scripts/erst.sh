@@ -54,3 +54,27 @@ echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 echo ""
 python utils/e2e_metrics.py $OUTPUT_FILE_PATH
 cat $MODEL_DIR/predicti.res
+
+echo ""
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "# Predicting SILVER on ${CORPUS}"
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo ""
+export TEST_DATA_PATH="${CORPUS_DIR}_silver/${CORPUS}_test.rels"
+export OUTPUT_FILE_PATH="$MODEL_DIR/silver_test_predictions.json"
+echo $TEST_DATA_PATH
+allennlp predict \
+        $MODEL_DIR \
+        $TEST_DATA_PATH \
+        --silent \
+	--cuda-device 0 \
+        --use-dataset-reader \
+        --output-file $OUTPUT_FILE_PATH
+
+echo ""
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "# Evaluating SILVER on ${CORPUS}"
+echo "#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo ""
+python utils/e2e_metrics.py $OUTPUT_FILE_PATH
+cat $MODEL_DIR/predicti.res
