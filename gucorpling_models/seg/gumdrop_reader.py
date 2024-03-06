@@ -246,7 +246,7 @@ def get_genre(corpus, doc):
             return "news"
         else:
             return doc.split("_")[0]
-    if corpus == "eng.rst.gum":
+    if corpus in ["eng.rst.gum", "eng.pdtb.gum"]:
         return doc.split("_")[1]
     if corpus == "eng.rst.stac":
         return "chat"
@@ -275,6 +275,7 @@ def get_genre(corpus, doc):
 CORPORA = [
     "deu.rst.pcc",
     "eng.pdtb.pdtb",
+    "eng.pdtb.gum",
     "eng.rst.gum",
     "eng.rst.rstdt",
     "eng.sdrt.stac",
